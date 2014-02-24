@@ -1,0 +1,134 @@
+<!--
+Copyright 2014 Google Inc. All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<html>
+<head>
+  <title>Genomics Python Map Reduce</title>
+  <!-- Bootstrap Resources -->
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+
+  <!-- Optional theme -->
+  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+
+  <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+  <!-- Latest compiled and minified JavaScript -->
+  <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+  <!-- Local Resources -->
+  <link rel="stylesheet" href="/static/css/main.css">
+  <script src="mapreduce/jquery.js" type="text/javascript"></script>
+  <script src="static/js/custom.js" type="text/javascript"></script>
+</head>
+<body role="document">
+<div class="container theme-showcase" role="main">
+  <h1>Genomics Python Map Reduce</h1>
+  Welcome {{ username }}.
+  <br/><br/>
+  <div class="row">
+    <div class="col-md-8">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Generate Coverage Statistics</h3>
+        </div>
+        <div class="panel-body">
+          <b>Enter the parameters below to calculate the coverage statistics.</b>
+          <br/><br/>
+          <form action="/" method="POST" >
+            <div class="row height-40">
+              <div class="col-md-4">Readset Id:</div>
+              <div class="col-md-8">
+                <input class="width-300" type="textfield" name="readsetId" id="readsetId"
+                       value="{{ settings.readsetId }}" /></div>
+            </div>
+            <div class="row height-40">
+              <div class="col-md-4">Sequence Name:</div>
+              <div class="col-md-8">
+                <select name="sequenceName" id="sequenceName" >
+                  {% for target in targets %}
+                  <option value="{{ target.name }}"{% if target.name == settings.sequenceName %} selected{% endif %}>{{ target.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="row height-40">
+              <div class="col-md-4">Sequence Start:</div>
+              <div class="col-md-8"><input type="textfield" id="sequenceStart" name="sequenceStart"
+                                           value="{{ settings.sequenceStart }}" />
+              </div>
+            </div>
+            <div class="row height-40">
+              <div class="col-md-4">Sequence End:</div>
+              <div class="col-md-8"><input type="textfield" id="sequenceEnd" name="sequenceEnd"
+                                           value="{{ settings.sequenceEnd }}" /></div>
+            </div>
+            <div class="row height-40">
+              <div class="col-md-4">&nbsp;</div>
+              <div class="col-md-8"><input type="checkbox" id="useMockData" name="useMockData"
+                  {% if settings.useMockData %} checked{% endif %}/>
+                Use mock data (sequence last 2 digits = coverage).</div>
+            </div>
+            <div class="row height-40">
+              <div class="col-md-4">&nbsp;</div>
+              <div class="col-md-8"><input type="checkbox" id="runPipeline" name="runPipeline" />
+                Run as a pipeline Map Reduce.</div>
+            </div>
+            <div class="row height-40">
+              <div class="col-md-4">&nbsp;</div>
+              <div class="col-md-8">
+                <input class="btn btn-primary" type="submit" id="submitRead" name="submitRead" value="Submit"
+                     onclick="submitReadProcessing()">
+                &nbsp;or instead, use <a href="/static/listRead_SampleData.json" target="_blank">this</a>:&nbsp;
+                <input class="btn btn-info" type="submit" id="submitReadSample"
+                       name="submitReadSample" value="Sample Data">
+              </div>
+            </div>
+          </form>
+          {% if errorMessage %}
+            <div id="errorMessage" class="alert alert-danger">
+              {{ errorMessage }}
+            </div>
+          {% endif %}
+          {% if results %}
+          <b>Coverage Results:</b>
+          <br/><br/>
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Sequence</th>
+                  <th>Coverage</th>
+                </tr>
+              </thead>
+              <tbody>
+              {% for key, value in results.iteritems() %}
+                <tr>
+                  <td>{{ key }}</td>
+                  <td>{{ value }}</td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+           </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
