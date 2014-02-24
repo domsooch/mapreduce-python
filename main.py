@@ -79,7 +79,8 @@ class GenomicsCoverageStatistics(db.Model):
   def getFirstKeyForReadsetId(readsetId):
     """Helper function that returns the first possible key a user could own.
 
-    This is useful for table scanning, in conjunction with getLastKeyForReadsetId.
+    This is useful for table scanning, in conjunction with
+    getLastKeyForReadsetId.
 
     Args:
       readsetId: The given ureadsetId.
@@ -89,7 +90,8 @@ class GenomicsCoverageStatistics(db.Model):
       user data).
     """
 
-    return db.Key.from_path("GenomicsCoverageStatistics", readsetId + GenomicsCoverageStatistics.__SEP)
+    return db.Key.from_path("GenomicsCoverageStatistics",
+                            readsetId + GenomicsCoverageStatistics.__SEP)
 
   @staticmethod
   def getLastKeyForReadsetId(readsetId):
@@ -105,7 +107,8 @@ class GenomicsCoverageStatistics(db.Model):
       user data).
     """
 
-    return db.Key.from_path("GenomicsCoverageStatistics", readsetId + GenomicsCoverageStatistics.__NEXT)
+    return db.Key.from_path("GenomicsCoverageStatistics",
+                            readsetId + GenomicsCoverageStatistics.__NEXT)
 
   @staticmethod
   def getKeyName(readsetId, sequenceName, sequence):
@@ -135,12 +138,14 @@ class ApiException(Exception):
 class BaseRequestHandler(webapp2.RequestHandler):
   def handle_exception(self, exception, debug_mode):
     if isinstance(exception, ApiException):
-      # ApiExceptions are expected, and will return nice error messages to the client
+      # ApiExceptions are expected, and will return nice error messages
+      # to the client
       self.response.write(exception.message)
       self.response.set_status(400)
     else:
       # All other exceptions are unexpected and should crash properly
-      return webapp2.RequestHandler.handle_exception(self, exception, debug_mode)
+      return webapp2.RequestHandler.handle_exception(
+        self, exception, debug_mode)
 
   def read_search(self, readsetId, sequenceName, sequenceStart, sequenceEnd):
     body = {
@@ -256,7 +261,8 @@ class MainHandler(BaseRequestHandler):
     sequenceEnd = int(self.request.get('sequenceEnd'))
     useMockData = self.request.get('useMockData')
 
-    # Todo: Validate inputs such as sequence start and end to make sure they are in bounds based on TARGETS.
+    # TODO: Validate inputs such as sequence start and end to make
+    # sure they are in bounds based on TARGETS.
 
     content = None
     coverage = None
@@ -267,33 +273,38 @@ class MainHandler(BaseRequestHandler):
       # If you are running the real pipeline map reduce then hit it.
       if self.request.get('runPipeline'):
         logging.debug("Running pipeline")
-        pipeline = CoveragePipeline(readsetId, sequenceName, sequenceStart, sequenceEnd)
+        pipeline = CoveragePipeline(readsetId, sequenceName, sequenceStart,
+                                    sequenceEnd)
         pipeline.start()
-        self.redirect(pipeline.base_path + "/status?root=" + pipeline.pipeline_id)
+        self.redirect(pipeline.base_path + "/status?root="
+                      + pipeline.pipeline_id)
         return
 
       if useMockData:
         # Use the mock to get coverage information.
         mock = MockGenomicsAPI()
-        content = mock.read_search(readsetId, sequenceName, sequenceStart, sequenceEnd)
+        content = mock.read_search(readsetId, sequenceName, sequenceStart,
+                                   sequenceEnd)
       else:
         # Make the API call here to process directly.
         try:
-          content = self.read_search(readsetId, sequenceName, sequenceStart, sequenceEnd)
+          content = self.read_search(readsetId, sequenceName, sequenceStart,
+                                     sequenceEnd)
         except ApiException as exception:
           errorMessage = exception.message
 
     elif self.request.get("submitReadSample"):
       # Read in local sample data which is based off of default settings.
       body = MainHandler.DEFAULT_SETTINGS
-      path = os.path.join(os.path.split(__file__)[0], 'static/listRead_SampleData.json')
+      path = os.path.join(os.path.split(__file__)[0],
+                          'static/listRead_SampleData.json')
       file = open(path, 'r')
       content = file.read()
       file.close()
       content = json.loads(content)
 
     # If you have content then compute and store the results.
-    if content != None:
+    if content is not None:
       if 'reads' in content:
         # Calculate results
         coverage = compute_coverage(content, sequenceStart, sequenceEnd)
@@ -322,13 +333,16 @@ class MainHandler(BaseRequestHandler):
 
 
 def compute_coverage(content, sequenceStart, sequenceEnd):
-  """Takes the json results from the Genomics API call and computes coverage. """
+  """Takes the json results from the Genomics API call and computes
+  coverage. """
   coverage = defaultdict(int)
   for read in content["reads"]:
     # Check the read against every sequence.
     for sequence in range(sequenceStart, sequenceEnd + 1):
-      # If the position is in the range then count it as being covered by that read.
-      if sequence >= read["position"] and sequence < read["position"] + len(read["alignedSequence"]):
+      # If the position is in the range then count it as being covered
+      # by that read.
+      read_end = read["position"] + len(read["alignedSequence"])
+      if sequence >= read["position"] and sequence < read_end:
         coverage[sequence] += 1
       else:
         # Force a 0 to be recorded for that sequence number.
@@ -340,7 +354,8 @@ def compute_coverage(content, sequenceStart, sequenceEnd):
 
 def store_coverage(readsetId, sequenceName, dict):
   for sequence, coverage in dict.iteritems():
-    key = GenomicsCoverageStatistics.getKeyName(readsetId, sequenceName, sequence)
+    key = GenomicsCoverageStatistics.getKeyName(
+      readsetId, sequenceName, sequence)
     s = GenomicsCoverageStatistics(key_name=key)
     s.readsetId = readsetId
     s.sequenceName = sequenceName
@@ -348,6 +363,7 @@ def store_coverage(readsetId, sequenceName, dict):
     s.coverage = coverage
     s.date = datetime.datetime.now()
     s.put()
+
 
 def split_into_sentences(s):
   """Split text into list of sentences."""
@@ -446,26 +462,26 @@ class MockGenomicsAPI():
   """
 
   def read_search(self, readsetId, sequenceName, sequenceStart, sequenceEnd):
-    """ Provides mock data for the https://www.googleapis.com/genomics/v1beta/reads/search
-    Genomics API call.
+    """ Provides mock data for the
+    https://www.googleapis.com/genomics/v1beta/reads/search Genomics API call.
 
-    The mock data will return reads such that the coverage counts should equal the last 2
-    digits of the sequence number. For example a sequenceStart 68164 should have a coverage
-    of 64 reads.
+    The mock data will return reads such that the coverage counts should equal
+    the last 2 digits of the sequence number. For example a sequenceStart 68164
+    should have a coverage of 64 reads.
     """
     output = {
       "reads": [],
     }
     # Start with the first page of 100.
-    startRoundDown = sequenceStart / 100 * 100;
+    startRoundDown = sequenceStart / 100 * 100
     for startPage in range(startRoundDown, sequenceEnd + 1, 100):
       output["reads"] += self._create_page_of_reads(startPage)
     return output
 
   def _create_page_of_reads(self, startPosition):
-    """ Creates a page of data staring from page XXX00 and ending at page XXX99.
-     Page XXX00 has 0 coverage, page XXX01 has a coverage of 1 read, ... page XXX99
-     has a coverage of 99 reads.
+    """ Creates a page of data staring from page XXX00 and ending at page
+    XXX99. Page XXX00 has 0 coverage, page XXX01 has a coverage of
+    1 read, ... page XXX99 has a coverage of 99 reads.
     """
     reads = []
     endPosition = startPosition + 100
@@ -479,5 +495,3 @@ class MockGenomicsAPI():
       "alignedSequence": "X" * length,
     }
     return read
-
-
