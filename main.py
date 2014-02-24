@@ -154,7 +154,7 @@ class BaseRequestHandler(webapp2.RequestHandler):
       'sequenceStart': sequenceStart,
       'sequenceEnd': sequenceEnd,
       # May want to specfify just the fields that we need.
-      #'includeFields': ["position", "alignedSequence"]
+      #'includeFields': ["position", "alignedBases"]
       }
 
     logging.debug("Request Body:")
@@ -341,7 +341,7 @@ def compute_coverage(content, sequenceStart, sequenceEnd):
     for sequence in range(sequenceStart, sequenceEnd + 1):
       # If the position is in the range then count it as being covered
       # by that read.
-      read_end = read["position"] + len(read["alignedSequence"])
+      read_end = read["position"] + len(read["alignedBases"])
       if sequence >= read["position"] and sequence < read_end:
         coverage[sequence] += 1
       else:
@@ -492,6 +492,6 @@ class MockGenomicsAPI():
   def _create_read(self, position, length):
     read = {
       "position": position,
-      "alignedSequence": "X" * length,
+      "alignedBases": "X" * length,
     }
     return read
