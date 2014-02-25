@@ -416,25 +416,19 @@ class CoveragePipeline(base_handler.PipelineBase):
         "mime_type": "text/plain",
       },
       shards=16)
-    #yield StoreOutput(filekey, output)
+    yield ProcessPipelineOutput(output)
 
 
-class StoreOutput(base_handler.PipelineBase):
-  """A pipeline to store the result of the MapReduce job in the database.
+class ProcessPipelineOutput(base_handler.PipelineBase):
+  """A pipeline to proecss the result of the MapReduce job.
 
   Args:
-    mr_type: the type of mapreduce job run (e.g., WordCount, Index)
-    encoded_key: the DB key corresponding to the metadata of this job
     output: the blobstore location where the output of the job is stored
   """
 
-  def run(self, encoded_key, coverage):
-    logging.debug("Coverage is %d" % coverage)
-    key = db.Key(encoded=encoded_key)
-    s = GenomicsCoverageStatistics.get(key)
-    s.coverage = coverage
-    s.date = datetime.datetime.now()
-    s.put()
+  def run(self, output):
+    logging.info("Pipeline Map Reduce has been completed. "
+                 "Results can be found here:: %s" % output[0])
 
 
 app = webapp2.WSGIApplication(
