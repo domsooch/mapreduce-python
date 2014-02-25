@@ -45,6 +45,22 @@ from mapreduce import shuffler
 
 from oauth2client import appengine
 
+# In the local development environment, implement some customizations.
+if os.environ['SERVER_SOFTWARE'].startswith('Development'):
+  # Add color to logging messages.
+  logging.addLevelName(logging.ERROR,
+                       "\033[1;31m%s\033[1;m\t" %
+                       logging.getLevelName(logging.ERROR))
+  logging.addLevelName(logging.WARNING,
+                       "\033[1;33m%s\033[1;m\t" %
+                       logging.getLevelName(logging.WARNING))
+  logging.addLevelName(logging.INFO,
+                       "\033[1;32m%s\033[1;m\t" %
+                       logging.getLevelName(logging.INFO))
+  logging.addLevelName(logging.DEBUG,
+                       "\033[1;36m%s\033[1;m\t" %
+                       logging.getLevelName(logging.DEBUG))
+
 # Increase timeout to the maximum for all requests
 urlfetch.set_default_fetch_deadline(60)
 
@@ -279,7 +295,7 @@ class MainHandler(BaseRequestHandler):
       if self.request.get('runPipeline'):
         logging.debug("Running pipeline")
         pipeline = CoveragePipeline(readsetId, sequenceName, sequenceStart,
-                                    sequenceEnd)
+                                    sequenceEnd, useMockData)
         pipeline.start()
         self.redirect(pipeline.base_path + "/status?root="
                       + pipeline.pipeline_id)
@@ -390,7 +406,8 @@ class CoveragePipeline(base_handler.PipelineBase):
       text files inside.
   """
 
-  def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd):
+  def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
+          useMockData):
     logging.debug("Running Pipeline for readsetId %s" % readsetId)
     output = yield mapreduce_pipeline.MapreducePipeline(
       "generate_coverage",
@@ -404,6 +421,7 @@ class CoveragePipeline(base_handler.PipelineBase):
           "sequenceName": sequenceName,
           "sequenceStart": sequenceStart,
           "sequenceEnd": sequenceEnd,
+          "useMockData": useMockData,
         },
         "output_writer": {
           "readsetId": readsetId,
@@ -427,8 +445,13 @@ class ProcessPipelineOutput(base_handler.PipelineBase):
   """
 
   def run(self, output):
+    blobstorePath = output[0]
+    # TODO determine if you are running locally or not and change the url
+    # accordingly.
+    url = str.replace(str(blobstorePath), "/blobstore/",
+                      "http://localhost:8000/blobstore/blob/")
     logging.info("Pipeline Map Reduce has been completed. "
-                 "Results can be found here:: %s" % output[0])
+                 "Results can be found here: %s" % url)
 
 
 app = webapp2.WSGIApplication(
@@ -495,6 +518,7 @@ class GenomicsAPIInputReader(input_readers.InputReader):
   SEQUENCE_NAME_PARAM = "sequenceName"
   SEQUEQNCE_START_PARAM = "sequenceStart"
   SEQUEQNCE_END_PARAM = "sequenceEnd"
+  USE_MOCK_DATA_PARAM = "useMockData"
 
   # Maximum number of shards to allow.
   _MAX_SHARD_COUNT = 256
@@ -509,7 +533,7 @@ class GenomicsAPIInputReader(input_readers.InputReader):
   # 2. A shard has to process files from a contiguous namespace.
   #    May introduce staggering shard.
   def __init__(self, readsetId=None, sequenceName=None, sequenceStart=None,
-               sequenceEnd=None):
+               sequenceEnd=None, useMockData=True):
     """Initialize a GenomicsAPIInputReader instance.
 
     Args:
@@ -520,6 +544,7 @@ class GenomicsAPIInputReader(input_readers.InputReader):
     self._sequenceName = sequenceName
     self._sequenceStart = sequenceStart
     self._sequenceEnd = sequenceEnd
+    self._useMockData = useMockData
     self._nextPageToken = None
 
   @classmethod
@@ -562,6 +587,7 @@ class GenomicsAPIInputReader(input_readers.InputReader):
     sequenceName = reader_spec[cls.SEQUENCE_NAME_PARAM]
     sequenceStart = reader_spec.get(cls.SEQUEQNCE_START_PARAM)
     sequenceEnd = reader_spec.get(cls.SEQUEQNCE_END_PARAM)
+    useMockData = reader_spec.get(cls.USE_MOCK_DATA_PARAM)
 
     # TODO if you are doing all sequences then you need to take sequence name
     # into account as well.
@@ -582,12 +608,12 @@ class GenomicsAPIInputReader(input_readers.InputReader):
       end = start + range_length - 1
       logging.debug("GenomicsAPIInputReader split_input() start: %d end: %d." %
                     (start, end))
-      readers.append(cls(readsetId, sequenceName, start, end))
+      readers.append(cls(readsetId, sequenceName, start, end, useMockData))
     start = sequenceStart + (range_length * (shard_count - 1))
     end = sequenceEnd
     logging.debug("GenomicsAPIInputReader split_input() start: %d end: %d." %
                     (start, end))
-    readers.append(cls(readsetId, sequenceName, start, end))
+    readers.append(cls(readsetId, sequenceName, start, end, useMockData))
 
     return readers
 
@@ -605,15 +631,9 @@ class GenomicsAPIInputReader(input_readers.InputReader):
       StopIteration: The list of files has been exhausted.
     """
     if self._nextPageToken is None:
-      # Make the call
-      mock = MockGenomicsAPI()
-      logging.debug("GenomicsAPIInputReader next() is Reading "
-                    "start: %d end: %d." %
-                    (self._sequenceStart, self._sequenceEnd))
-      content = mock.read_search(self._readsetId, self._sequenceName,
-                                 self._sequenceStart, self._sequenceEnd)
-      self._nextPageToken = "Done"
-      return (content, self._sequenceStart, self._sequenceEnd)
+      # Get and return the content
+      results = self._get_results()
+      return (results, self._sequenceStart, self._sequenceEnd)
     elif self._nextPageToken == "Done":
       # All Done
       logging.debug("GenomicsAPIInputReader next() is Done "
@@ -629,4 +649,13 @@ class GenomicsAPIInputReader(input_readers.InputReader):
       self._nextPageToken = "Done"
       return (None, None, None)
 
-
+  def _get_results(self):
+    # See if we are using the mock or fetching real data via the API.
+    if self._useMockData:
+      mock = MockGenomicsAPI()
+      results = mock.read_search(self._readsetId, self._sequenceName,
+                                 self._sequenceStart, self._sequenceEnd)
+      self._nextPageToken = "Done"
+      return results
+    else:
+      self._nextPageToken = "Done"
