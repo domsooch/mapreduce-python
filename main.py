@@ -248,11 +248,10 @@ class MainHandler(BaseRequestHandler):
   DEFAULT_SETTINGS = {
     'readsetId': "CJ_ppJ-WCxD-2oXg667IhDM=",
     'sequenceName': "chr20",
-    'sequenceStart': 68198,
-    'sequenceEnd': 68214,
+    'sequenceStart': 68101,
+    'sequenceEnd': 68164,
     'useMockData': True,
     'runPipeline': True,
-
   }
 
   @decorator.oauth_aware
@@ -424,10 +423,6 @@ class CoveragePipeline(base_handler.PipelineBase):
           "useMockData": useMockData,
         },
         "output_writer": {
-          "readsetId": readsetId,
-          "sequenceName": sequenceName,
-          "sequenceStart": sequenceStart,
-          "sequenceEnd": sequenceEnd,
         },
       },
       reducer_params={
@@ -482,7 +477,7 @@ class MockGenomicsAPI():
     }
     # Start with the first page of 100.
     startRoundDown = sequenceStart / 100 * 100
-    for startPage in range(startRoundDown, sequenceEnd + 1, 100):
+    for startPage in range(startRoundDown, sequenceEnd, 100):
       output["reads"] += self._create_page_of_reads(startPage)
     return output
 
@@ -595,10 +590,11 @@ class GenomicsAPIInputReader(input_readers.InputReader):
 
     # Divide the range by the shard count to get the step.
     shard_count = min(cls._MAX_SHARD_COUNT, mapper_spec.shard_count)
-    range_length = (sequenceEnd - sequenceStart) // shard_count
+    range_length = ((sequenceEnd + 1) - sequenceStart) // shard_count
     if range_length == 0:
       range_length = 1
-    logging.debug("GenomicsAPIInputReader split_input() shards: %d step: %d" %
+    logging.debug("GenomicsAPIInputReader split_input() "
+                  "shards: %d range_length: %d" %
                   (mapper_spec.shard_count, range_length))
 
     # Split into shards
