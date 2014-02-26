@@ -164,53 +164,6 @@ class BaseRequestHandler(webapp2.RequestHandler):
       return webapp2.RequestHandler.handle_exception(
         self, exception, debug_mode)
 
-  def read_search(self, readsetId, sequenceName, sequenceStart, sequenceEnd):
-    body = {
-      'readsetIds': [readsetId],
-      'sequenceName': sequenceName,
-      'sequenceStart': sequenceStart,
-      'sequenceEnd': sequenceEnd,
-      # May want to specfify just the fields that we need.
-      #'includeFields': ["position", "alignedBases"]
-      }
-
-    logging.debug("Request Body:")
-    logging.debug(body)
-
-    content = self._get_content("reads/search", body=body)
-    return content
-
-  def _get_content(self, path, method='POST', body=None):
-    http = decorator.http()
-    try:
-      response, content = http.request(
-        uri="https://www.googleapis.com/genomics/v1beta/%s" % path,
-        method=method, body=json.dumps(body) if body else None,
-        headers={'Content-Type': 'application/json; charset=UTF-8'})
-    except DeadlineExceededError:
-      raise ApiException('API fetch timed out')
-
-    # Log results to debug
-    logging.debug("Response:")
-    logging.debug(response)
-    logging.debug("Content:")
-    logging.debug(content)
-
-    # Parse the content as json.
-    content = json.loads(content)
-
-    if response.status == 404:
-      raise ApiException('API not found')
-    elif response.status == 400:
-      raise ApiException('API request malformed')
-    elif response.status != 200:
-      if 'error' in content:
-        logging.error("Error Code: %s Message: %s" %
-                      (content['error']['code'], content['error']['message']))
-      raise ApiException("Something went wrong with the API call. "
-                         "Please check the logs for more details.")
-    return content
-
 
 class MainHandler(BaseRequestHandler):
   """The main page that users will interact with, which presents users with
@@ -308,7 +261,8 @@ class MainHandler(BaseRequestHandler):
       else:
         # Make the API call here to process directly.
         try:
-          content = self.read_search(readsetId, sequenceName, sequenceStart,
+          api = GenomicsAPI()
+          content = api.read_search(readsetId, sequenceName, sequenceStart,
                                      sequenceEnd)
         except ApiException as exception:
           errorMessage = exception.message
@@ -456,13 +410,67 @@ app = webapp2.WSGIApplication(
   ],
   debug=True)
 
+class GenomicsAPI():
+  """ Provides and interface for which to make Google Genomics API calls.
+  """
+
+  def read_search(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
+                  pageToken=None):
+    body = {
+      'readsetIds': [readsetId],
+      'sequenceName': sequenceName,
+      'sequenceStart': sequenceStart,
+      'sequenceEnd': sequenceEnd,
+      'pageToken': pageToken
+      # May want to specfify just the fields that we need.
+      #'includeFields': ["position", "alignedBases"]
+      }
+
+    logging.debug("Request Body:")
+    logging.debug(body)
+
+    content = self._get_content("reads/search", body=body)
+    return content
+
+  def _get_content(self, path, method='POST', body=None):
+    http = decorator.http()
+    try:
+      response, content = http.request(
+        uri="https://www.googleapis.com/genomics/v1beta/%s" % path,
+        method=method, body=json.dumps(body) if body else None,
+        headers={'Content-Type': 'application/json; charset=UTF-8'})
+    except DeadlineExceededError:
+      raise ApiException('API fetch timed out')
+
+    # Log results to debug
+    logging.debug("Response:")
+    logging.debug(response)
+    logging.debug("Content:")
+    logging.debug(content)
+
+    # Parse the content as json.
+    content = json.loads(content)
+
+    if response.status == 404:
+      raise ApiException('API not found')
+    elif response.status == 400:
+      raise ApiException('API request malformed')
+    elif response.status != 200:
+      if 'error' in content:
+        logging.error("Error Code: %s Message: %s" %
+                      (content['error']['code'], content['error']['message']))
+      raise ApiException("Something went wrong with the API call. "
+                         "Please check the logs for more details.")
+    return content
+
 
 class MockGenomicsAPI():
   """ Provides a mock for the Genomics API so that you can call use this class
   instead of actual Genomics API calls for testing purposes.
   """
 
-  def read_search(self, readsetId, sequenceName, sequenceStart, sequenceEnd):
+  def read_search(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
+                  pageToken=None):
     """ Provides mock data for the
     https://www.googleapis.com/genomics/v1beta/reads/search Genomics API call.
 
@@ -540,6 +548,7 @@ class GenomicsAPIInputReader(input_readers.InputReader):
     self._sequenceStart = sequenceStart
     self._sequenceEnd = sequenceEnd
     self._useMockData = useMockData
+    self._firstTime = True
     self._nextPageToken = None
 
   @classmethod
@@ -626,32 +635,33 @@ class GenomicsAPIInputReader(input_readers.InputReader):
     Raises:
       StopIteration: The list of files has been exhausted.
     """
-    if self._nextPageToken is None:
-      # Get and return the content
-      results = self._get_results()
-      return (results, self._sequenceStart, self._sequenceEnd)
-    elif self._nextPageToken == "Done":
+
+    # If it's your first time or you have a tokent then make the call.
+    if self._firstTime or self._nextPageToken:
+      # Determine if we are using the real or mock Genomics API.
+      api = MockGenomicsAPI() if self._useMockData else GenomicsAPI()
+      # Get the results
+      try:
+        content = api.read_search(self._readsetId, self._sequenceName,
+                                   self._sequenceStart, self._sequenceEnd,
+                                   self._nextPageToken)
+        self._firstTime = False
+      except ApiException as exception:
+        errorMessage = exception.message
+        # TODO not sure what we do here if we can't get content?
+        raise StopIteration()
+
+      if content is not None:
+        if 'nextPageToken' in content:
+          self._nextPageToken = content["nextPageToken"]
+        if 'reads' in content:
+          return (content, self._sequenceStart, self._sequenceEnd)
+      else:
+        # TODO not sure what we do here if we got content but not as expected?
+        raise StopIteration()
+    else:
       # All Done
       logging.debug("GenomicsAPIInputReader next() is Done "
                     "start: %d end: %d." %
                     (self._sequenceStart, self._sequenceEnd))
       raise StopIteration()
-    else:
-      # Use the next page token to get next page of results:
-      # TODO implement paging.
-      logging.debug("GenomicsAPIInputReader next() is Reading next token "
-                    "start: %d end: %d." %
-                    (self._sequenceStart, self._sequenceEnd))
-      self._nextPageToken = "Done"
-      return (None, None, None)
-
-  def _get_results(self):
-    # See if we are using the mock or fetching real data via the API.
-    if self._useMockData:
-      mock = MockGenomicsAPI()
-      results = mock.read_search(self._readsetId, self._sequenceName,
-                                 self._sequenceStart, self._sequenceEnd)
-      self._nextPageToken = "Done"
-      return results
-    else:
-      self._nextPageToken = "Done"
