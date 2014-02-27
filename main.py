@@ -17,6 +17,7 @@ Example Genomics Map Reduce
 """
 
 import datetime
+import httplib2
 import jinja2
 import json
 import logging
@@ -32,6 +33,9 @@ from google.appengine.api import taskqueue
 from google.appengine.api import users
 from google.appengine.api import urlfetch
 from google.appengine.api.urlfetch_errors import DeadlineExceededError
+from google.appengine.api import memcache
+
+from oauth2client.appengine import AppAssertionCredentials
 
 from collections import defaultdict
 
@@ -42,6 +46,10 @@ from mapreduce import input_readers
 from mapreduce import mapreduce_pipeline
 from mapreduce import operation
 from mapreduce import shuffler
+
+from genomicsapi import GenomicsAPI
+from genomicsapi import ApiException
+from mockgenomicsapi import MockGenomicsAPI
 
 from oauth2client import appengine
 
@@ -146,11 +154,6 @@ class GenomicsCoverageStatistics(db.Model):
 
     sep = GenomicsCoverageStatistics.__SEP
     return str(readsetId + sep + sequenceName + sep + str(sequence))
-
-
-class ApiException(Exception):
-  pass
-
 
 class BaseRequestHandler(webapp2.RequestHandler):
   def handle_exception(self, exception, debug_mode):
@@ -261,7 +264,7 @@ class MainHandler(BaseRequestHandler):
       else:
         # Make the API call here to process directly.
         try:
-          api = GenomicsAPI()
+          api = GenomicsAPIClientOAuth()
           content = api.read_search(readsetId, sequenceName, sequenceStart,
                                      sequenceEnd)
         except ApiException as exception:
@@ -409,104 +412,6 @@ app = webapp2.WSGIApplication(
     (decorator.callback_path, decorator.callback_handler()),
   ],
   debug=True)
-
-class GenomicsAPI():
-  """ Provides and interface for which to make Google Genomics API calls.
-  """
-
-  def read_search(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
-                  pageToken=None):
-    body = {
-      'readsetIds': [readsetId],
-      'sequenceName': sequenceName,
-      'sequenceStart': sequenceStart,
-      'sequenceEnd': sequenceEnd,
-      'pageToken': pageToken
-      # May want to specfify just the fields that we need.
-      #'includeFields': ["position", "alignedBases"]
-      }
-
-    logging.debug("Request Body:")
-    logging.debug(body)
-
-    content = self._get_content("reads/search", body=body)
-    return content
-
-  def _get_content(self, path, method='POST', body=None):
-    http = decorator.http()
-    try:
-      response, content = http.request(
-        uri="https://www.googleapis.com/genomics/v1beta/%s" % path,
-        method=method, body=json.dumps(body) if body else None,
-        headers={'Content-Type': 'application/json; charset=UTF-8'})
-    except DeadlineExceededError:
-      raise ApiException('API fetch timed out')
-
-    # Log results to debug
-    logging.debug("Response:")
-    logging.debug(response)
-    logging.debug("Content:")
-    logging.debug(content)
-
-    # Parse the content as json.
-    content = json.loads(content)
-
-    if response.status == 404:
-      raise ApiException('API not found')
-    elif response.status == 400:
-      raise ApiException('API request malformed')
-    elif response.status != 200:
-      if 'error' in content:
-        logging.error("Error Code: %s Message: %s" %
-                      (content['error']['code'], content['error']['message']))
-      raise ApiException("Something went wrong with the API call. "
-                         "Please check the logs for more details.")
-    return content
-
-
-class MockGenomicsAPI():
-  """ Provides a mock for the Genomics API so that you can call use this class
-  instead of actual Genomics API calls for testing purposes.
-  """
-
-  def read_search(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
-                  pageToken=None):
-    """ Provides mock data for the
-    https://www.googleapis.com/genomics/v1beta/reads/search Genomics API call.
-
-    The mock data will return reads such that the coverage counts should equal
-    the last 2 digits of the sequence number. For example a sequenceStart 68164
-    should have a coverage of 64 reads.
-    """
-    logging.debug("MockGenomicsAPI read_search() called "
-                  "with start: %d end: %d" % (sequenceStart, sequenceEnd))
-    output = {
-      "reads": [],
-    }
-    # Start with the first page of 100.
-    startRoundDown = sequenceStart / 100 * 100
-    for startPage in range(startRoundDown, sequenceEnd, 100):
-      output["reads"] += self._create_page_of_reads(startPage)
-    return output
-
-  def _create_page_of_reads(self, startPosition):
-    """ Creates a page of data staring from page XXX00 and ending at page
-    XXX99. Page XXX00 has 0 coverage, page XXX01 has a coverage of
-    1 read, ... page XXX99 has a coverage of 99 reads.
-    """
-    reads = []
-    endPosition = startPosition + 100
-    for position in range(startPosition + 1, endPosition):
-      reads.append(self._create_read(position, endPosition - position))
-    return reads
-
-  def _create_read(self, position, length):
-    read = {
-      "position": position,
-      "alignedBases": "X" * length,
-    }
-    return read
-
 
 #
 # Move to different file???
@@ -665,3 +570,57 @@ class GenomicsAPIInputReader(input_readers.InputReader):
                     "start: %d end: %d." %
                     (self._sequenceStart, self._sequenceEnd))
       raise StopIteration()
+
+
+class GenomicsAPIClientOAuth():
+  """ Provides and interface for which to make Google Genomics API calls.
+  """
+
+  def read_search(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
+                  pageToken=None):
+    body = {
+      'readsetIds': [readsetId],
+      'sequenceName': sequenceName,
+      'sequenceStart': sequenceStart,
+      'sequenceEnd': sequenceEnd,
+      'pageToken': pageToken
+      # May want to specfify just the fields that we need.
+      #'includeFields': ["position", "alignedBases"]
+      }
+
+    logging.debug("Request Body:")
+    logging.debug(body)
+
+    content = self._get_content("reads/search", body=body)
+    return content
+
+  def _get_content(self, path, method='POST', body=None):
+    http = decorator.http()
+    try:
+      response, content = http.request(
+        uri="https://www.googleapis.com/genomics/v1beta/%s" % path,
+        method=method, body=json.dumps(body) if body else None,
+        headers={'Content-Type': 'application/json; charset=UTF-8'})
+    except DeadlineExceededError:
+      raise ApiException('API fetch timed out')
+
+    # Log results to debug
+    logging.debug("Response:")
+    logging.debug(response)
+    logging.debug("Content:")
+    logging.debug(content)
+
+    # Parse the content as json.
+    content = json.loads(content)
+
+    if response.status == 404:
+      raise ApiException('API not found')
+    elif response.status == 400:
+      raise ApiException('API request malformed')
+    elif response.status != 200:
+      if 'error' in content:
+        logging.error("Error Code: %s Message: %s" %
+                      (content['error']['code'], content['error']['message']))
+      raise ApiException("Something went wrong with the API call. "
+                         "Please check the logs for more details.")
+    return content
