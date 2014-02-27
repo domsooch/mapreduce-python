@@ -57,16 +57,16 @@ from oauth2client import appengine
 if os.environ['SERVER_SOFTWARE'].startswith('Development'):
   # Add color to logging messages.
   logging.addLevelName(logging.ERROR,
-                       "\033[1;31m%s\033[1;m\t" %
+                       "\033[0;31m%s\033[0m\t" %
                        logging.getLevelName(logging.ERROR))
   logging.addLevelName(logging.WARNING,
-                       "\033[1;33m%s\033[1;m\t" %
+                       "\033[0;33m%s\033[0m\t" %
                        logging.getLevelName(logging.WARNING))
   logging.addLevelName(logging.INFO,
-                       "\033[1;32m%s\033[1;m\t" %
+                       "\033[0;32m%s\033[0m\t" %
                        logging.getLevelName(logging.INFO))
   logging.addLevelName(logging.DEBUG,
-                       "\033[1;36m%s\033[1;m\t" %
+                       "\033[0;36m%s\033[0m\t" %
                        logging.getLevelName(logging.DEBUG))
 
 # Increase timeout to the maximum for all requests
