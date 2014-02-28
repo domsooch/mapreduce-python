@@ -38,6 +38,25 @@ handlers:
   script: main.app
   login: required
 
+env_variables:
+  # This is found in the new developer console in the APIs & Auth -> Credentials
+  # page. Look at the Public API access section in the bottom right and copy the
+  # API Key here.
+  API_KEY: 'your-api-key-goes-here'
+
+  # Note: If you are running on a local dev app server (dev_appserver.py) you
+  # will need to generate an OAuth Service Account and download the
+  # private-key.p12 file. That will need to be converted to a private-key.pem
+  # file as follows:
+  #   cat privatekey.p12 | openssl pkcs12 -nodes -nocerts \
+  #     -passin pass:notasecret | openssl rsa > private-key.pem
+  # Then using the email address associated with this Service Account run the
+  # dev app server as follows:
+  #   dev_appserver.py --appidentity_private_key_path private-key.pem \
+  #     --appidentity_email_address XXX@developer.gserviceaccount.com
+  # Otherwise you may get Error Code: 401 Message: Invalid Credentials when
+  # calling the Genomics API.
+
 libraries:
 - name: webapp2
   version: "2.5.1"

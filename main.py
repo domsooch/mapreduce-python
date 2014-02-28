@@ -17,13 +17,11 @@ Example Genomics Map Reduce
 """
 
 import datetime
-import httplib2
 import jinja2
 import json
 import logging
 import os
 import pickle
-import re
 import webapp2
 
 from google.appengine.ext import db
@@ -31,9 +29,6 @@ from google.appengine.ext import db
 from google.appengine.api import files
 from google.appengine.api import taskqueue
 from google.appengine.api import users
-from google.appengine.api import urlfetch
-from google.appengine.api.urlfetch_errors import DeadlineExceededError
-from google.appengine.api import memcache
 
 from oauth2client.appengine import AppAssertionCredentials
 
@@ -68,9 +63,6 @@ if os.environ['SERVER_SOFTWARE'].startswith('Development'):
   logging.addLevelName(logging.DEBUG,
                        "\033[0;36m%s\033[0m\t" %
                        logging.getLevelName(logging.DEBUG))
-
-# Increase timeout to the maximum for all requests
-urlfetch.set_default_fetch_deadline(60)
 
 JINJA_ENVIRONMENT = jinja2.Environment(
   loader=jinja2.FileSystemLoader('templates'),
@@ -206,8 +198,8 @@ class MainHandler(BaseRequestHandler):
     'sequenceName': "chr20",
     'sequenceStart': 68101,
     'sequenceEnd': 68164,
-    'useMockData': True,
-    'runPipeline': True,
+    'useMockData': False,
+    'runPipeline': False,
   }
 
   @decorator.oauth_aware
@@ -264,7 +256,7 @@ class MainHandler(BaseRequestHandler):
       else:
         # Make the API call here to process directly.
         try:
-          api = GenomicsAPIClientOAuth()
+          api = GenomicsAPI()
           content = api.read_search(readsetId, sequenceName, sequenceStart,
                                      sequenceEnd)
         except ApiException as exception:
@@ -570,57 +562,3 @@ class GenomicsAPIInputReader(input_readers.InputReader):
                     "start: %d end: %d." %
                     (self._sequenceStart, self._sequenceEnd))
       raise StopIteration()
-
-
-class GenomicsAPIClientOAuth():
-  """ Provides and interface for which to make Google Genomics API calls.
-  """
-
-  def read_search(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
-                  pageToken=None):
-    body = {
-      'readsetIds': [readsetId],
-      'sequenceName': sequenceName,
-      'sequenceStart': sequenceStart,
-      'sequenceEnd': sequenceEnd,
-      'pageToken': pageToken
-      # May want to specfify just the fields that we need.
-      #'includeFields': ["position", "alignedBases"]
-      }
-
-    logging.debug("Request Body:")
-    logging.debug(body)
-
-    content = self._get_content("reads/search", body=body)
-    return content
-
-  def _get_content(self, path, method='POST', body=None):
-    http = decorator.http()
-    try:
-      response, content = http.request(
-        uri="https://www.googleapis.com/genomics/v1beta/%s" % path,
-        method=method, body=json.dumps(body) if body else None,
-        headers={'Content-Type': 'application/json; charset=UTF-8'})
-    except DeadlineExceededError:
-      raise ApiException('API fetch timed out')
-
-    # Log results to debug
-    logging.debug("Response:")
-    logging.debug(response)
-    logging.debug("Content:")
-    logging.debug(content)
-
-    # Parse the content as json.
-    content = json.loads(content)
-
-    if response.status == 404:
-      raise ApiException('API not found')
-    elif response.status == 400:
-      raise ApiException('API request malformed')
-    elif response.status != 200:
-      if 'error' in content:
-        logging.error("Error Code: %s Message: %s" %
-                      (content['error']['code'], content['error']['message']))
-      raise ApiException("Something went wrong with the API call. "
-                         "Please check the logs for more details.")
-    return content

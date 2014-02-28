@@ -21,21 +21,13 @@ import json
 import logging
 import os
 
-from google.appengine.api import memcache
+from google.appengine.api import urlfetch
 from google.appengine.api.urlfetch_errors import DeadlineExceededError
 
 from oauth2client.appengine import AppAssertionCredentials
 
-from oauth2client import appengine
-
-client_secrets = os.path.join(os.path.dirname(__file__), 'client_secrets.json')
-
-decorator = appengine.oauth2decorator_from_clientsecrets(
-  client_secrets,
-  scope=[
-    'https://www.googleapis.com/auth/genomics',
-    'https://www.googleapis.com/auth/devstorage.read_write'
-  ])
+# Increase timeout to the maximum for all requests
+urlfetch.set_default_fetch_deadline(60)
 
 
 class ApiException(Exception):
@@ -53,7 +45,7 @@ class GenomicsAPI():
       'sequenceStart': sequenceStart,
       'sequenceEnd': sequenceEnd,
       'pageToken': pageToken
-      # May want to specfify just the fields that we need.
+      # May want to specify just the fields that we need.
       #'includeFields': ["position", "alignedBases"]
       }
 
@@ -64,14 +56,19 @@ class GenomicsAPI():
     return content
 
   def _get_content(self, path, method='POST', body=None):
-    credentials = AppAssertionCredentials(scope=[
-    'https://www.googleapis.com/auth/genomics',
-    'https://www.googleapis.com/auth/devstorage.read_write'
-    ])
-    http = credentials.authorize(httplib2.Http(memcache))
+    scope = [
+      'https://www.googleapis.com/auth/genomics',
+      'https://www.googleapis.com/auth/devstorage.read_write'
+    ]
+    api_key = os.environ['API_KEY']
+    credentials = AppAssertionCredentials(scope=scope)
+    http = httplib2.Http()
+    http = credentials.authorize(http)
+
     try:
       response, content = http.request(
-        uri="https://www.googleapis.com/genomics/v1beta/%s" % path,
+        uri="https://www.googleapis.com/genomics/v1beta/%s?key=%s"
+            % (path, api_key),
         method=method, body=json.dumps(body) if body else None,
         headers={'Content-Type': 'application/json; charset=UTF-8'})
     except DeadlineExceededError:
