@@ -199,8 +199,8 @@ class MainHandler(BaseRequestHandler):
     'sequenceName': "chr20",
     'sequenceStart': 68101,
     'sequenceEnd': 68164,
-    'useMockData': False,
-    'runPipeline': False,
+    'useMockData': True,
+    'runPipeline': True,
   }
 
   @decorator.oauth_aware
@@ -358,12 +358,13 @@ class CoveragePipeline(base_handler.PipelineBase):
   def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
           useMockData):
     logging.debug("Running Pipeline for readsetId %s" % readsetId)
+    bucket = os.environ['BUCKET']
     output = yield mapreduce_pipeline.MapreducePipeline(
       "generate_coverage",
       "main.generate_coverage_map",
       "main.generate_coverage_reduce",
       "main.GenomicsAPIInputReader",
-      "mapreduce.output_writers.BlobstoreOutputWriter",
+      "mapreduce.output_writers._GoogleCloudStorageOutputWriter",
       mapper_params={
         "input_reader": {
           "readsetId": readsetId,
@@ -372,11 +373,12 @@ class CoveragePipeline(base_handler.PipelineBase):
           "sequenceEnd": sequenceEnd,
           "useMockData": useMockData,
         },
-        "output_writer": {
-        },
       },
       reducer_params={
-        "mime_type": "text/plain",
+        "output_writer": {
+          "bucket_name": bucket,
+          "content_type": "text/plain",
+        },
       },
       shards=16)
     yield ProcessPipelineOutput(output)

@@ -42,7 +42,7 @@ env_variables:
   # This is found in the new developer console in the APIs & Auth -> Credentials
   # page. Look at the Public API access section in the bottom right and copy the
   # API Key here.
-  API_KEY: 'your-api-key-goes-here'
+  API_KEY: 'your_api_key_goes_here'
 
   # Note: If you are running on a local dev app server (dev_appserver.py) you
   # will need to generate an OAuth Service Account and download the
@@ -56,6 +56,9 @@ env_variables:
   #     --appidentity_email_address XXX@developer.gserviceaccount.com
   # Otherwise you may get Error Code: 401 Message: Invalid Credentials when
   # calling the Genomics API.
+
+  # This is your bucket in Google Cloud Storage for which to write output files.
+  BUCKET: 'your_bucket_name_goes_here'
 
 libraries:
 - name: webapp2
