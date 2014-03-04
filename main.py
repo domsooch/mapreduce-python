@@ -97,7 +97,7 @@ class MainHandler(BaseRequestHandler):
     # TODO: Validate inputs such as sequence start and end to make
     # sure they are in bounds based on TARGETS.
 
-    content = None
+    reads = []
     coverage = None
     errorMessage = None
 
@@ -122,8 +122,15 @@ class MainHandler(BaseRequestHandler):
 
       # Make the call.
       try:
-        content = api.read_search(readsetId, sequenceName, sequenceStart,
-                                   sequenceEnd)
+        pageToken = None
+        firstTime = True
+        while firstTime or pageToken is not None:
+          content = api.read_search(readsetId, sequenceName, sequenceStart,
+                                    sequenceEnd, pageToken)
+          firstTime = False
+          if 'reads' in content:
+            reads += content['reads']
+          pageToken = content['pageToken'] if 'pageToken' in content else None
       except ApiException as exception:
         errorMessage = exception.message
 
@@ -139,20 +146,17 @@ class MainHandler(BaseRequestHandler):
       content = file.read()
       file.close()
       content = json.loads(content)
+      reads = content['reads']
 
     # If you have content then compute and store the results.
-    if content is not None:
-      if 'reads' in content:
-        # Calculate results
-        coverage = GenomicsAPI.compute_coverage(content, sequenceStart,
-                                                sequenceEnd)
-        # TODO make a setting to turn this on/off?
-        #GenomicsCoverageStatistics.store_coverage(readsetId, sequenceName,
-        #                                          coverage)
-      else:
-        errorMessage = "There API did not return any reads to process."
+    if reads is not None and len(reads) > 0:
+      # Calculate results
+      coverage = GenomicsAPI.compute_coverage(reads, sequenceStart, sequenceEnd)
+      # TODO make a setting to turn this on/off?
+      #GenomicsCoverageStatistics.store_coverage(readsetId, sequenceName,
+      #                                          coverage)
     else:
-      errorMessage = "No content was returned to process."
+      errorMessage = "There API did not return any reads to process."
 
     # Render template with results or error.
     username = users.User().nickname()

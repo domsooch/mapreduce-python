@@ -29,9 +29,11 @@ Common.initialize()
 def generate_coverage_map(data):
   """Generate coverage map function."""
   (content, sequenceStart, sequenceEnd) = data
-  coverage = GenomicsAPI.compute_coverage(content, sequenceStart, sequenceEnd)
-  for key, value in coverage.iteritems():
-    yield (key, value)
+  if content is not None and 'reads' in content:
+    coverage = GenomicsAPI.compute_coverage(content['reads'], sequenceStart,
+                                            sequenceEnd)
+    for key, value in coverage.iteritems():
+      yield (key, value)
 
 def generate_coverage_reduce(key, values):
   """Generate coverage reduce function."""

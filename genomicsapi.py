@@ -132,11 +132,11 @@ class GenomicsAPI():
 
 
   @staticmethod
-  def compute_coverage(content, sequenceStart, sequenceEnd):
+  def compute_coverage(reads, sequenceStart, sequenceEnd):
     """Takes the json results from the Genomics API call and computes
     coverage. """
     coverage = defaultdict(int)
-    for read in content["reads"]:
+    for read in reads:
       # Check the read against every sequence.
       for sequence in range(sequenceStart, sequenceEnd + 1):
         # If the position is in the range then count it as being covered
@@ -148,5 +148,5 @@ class GenomicsAPI():
           # Force a 0 to be recorded for that sequence number.
           coverage[sequence] += 0
 
-    logging.debug("Processed: %d reads." % len(content["reads"]))
+    logging.debug("Processed: %d reads." % len(reads))
     return coverage
