@@ -199,8 +199,8 @@ class MainHandler(BaseRequestHandler):
     'sequenceName': "chr20",
     'sequenceStart': 68101,
     'sequenceEnd': 68164,
-    'useMockData': True,
-    'runPipeline': True,
+    'useMockData': False,
+    'runPipeline': False,
   }
 
   @decorator.oauth_aware
@@ -453,14 +453,13 @@ class PipelineReturnResults(base_handler.PipelineBase):
   """
 
   def run(self, output):
-    logging.info('Number of output files: %d' % len(output))
+    logging.debug('Number of output files: %d' % len(output))
     file = output[0]
     if os.environ['SERVER_SOFTWARE'].startswith('Development'):
       url = "http://localhost:8080/_ah/gcs" + file
     else:
       url = "https://storage.cloud.google.com" + file
-    logging.info("Pipeline Map Reduce has been completed. "
-                 "Results can be found here: %s" % url)
+    logging.info("Genomics pipeline completed. Results: %s" % url)
 
 
 app = webapp2.WSGIApplication(
