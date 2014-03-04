@@ -250,19 +250,18 @@ class MainHandler(BaseRequestHandler):
                       + pipeline.pipeline_id)
         return
 
+      # Make the API calls directly from the web ui.
+      api = GenomicsAPI()
+      # Use the Mock API if requested.
       if useMockData:
-        # Use the mock to get coverage information.
-        mock = MockGenomicsAPI()
-        content = mock.read_search(readsetId, sequenceName, sequenceStart,
+        api = MockGenomicsAPI()
+
+      # Make the call.
+      try:
+        content = api.read_search(readsetId, sequenceName, sequenceStart,
                                    sequenceEnd)
-      else:
-        # Make the API call here to process directly.
-        try:
-          api = GenomicsAPI()
-          content = api.read_search(readsetId, sequenceName, sequenceStart,
-                                     sequenceEnd)
-        except ApiException as exception:
-          errorMessage = exception.message
+      except ApiException as exception:
+        errorMessage = exception.message
 
     elif self.request.get("submitReadSample"):
       # Read in local sample data which is based off of default settings.
