@@ -19,16 +19,19 @@ Example Genomics Map Reduce
 import httplib2
 import json
 import logging
+import socket
 import os
 
 from google.appengine.api import urlfetch
+from google.appengine.api import memcache
 from google.appengine.api.urlfetch_errors import DeadlineExceededError
 
 from oauth2client.appengine import AppAssertionCredentials
 
-# Increase timeout to the maximum for all requests
+# Increase timeout to the maximum for all requests and use caching
 urlfetch.set_default_fetch_deadline(60)
-
+socket.setdefaulttimeout(60)
+http = httplib2.Http(cache=memcache)
 
 class ApiException(Exception):
   pass
