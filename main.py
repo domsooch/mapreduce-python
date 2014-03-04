@@ -130,7 +130,8 @@ class MainHandler(BaseRequestHandler):
           firstTime = False
           if 'reads' in content:
             reads += content['reads']
-          pageToken = content['pageToken'] if 'pageToken' in content else None
+          pageToken = content['nextPageToken'] if 'nextPageToken' in content\
+            else None
       except ApiException as exception:
         errorMessage = exception.message
 

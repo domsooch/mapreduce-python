@@ -37,7 +37,6 @@ Common.initialize()
 # Increase timeout to the maximum for all requests and use caching
 urlfetch.set_default_fetch_deadline(60)
 socket.setdefaulttimeout(60)
-http = httplib2.Http(cache=memcache)
 
 class ApiException(Exception):
   pass
@@ -74,6 +73,10 @@ class GenomicsAPI():
 
   def read_search(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
                   pageToken=None):
+    logging.info("GenomicsAPI read_search() start: %d end: %d token: %s" %
+                  (sequenceStart, sequenceEnd, str(pageToken)))
+
+    # Create the body with the parameters.
     body = {
       'readsetIds': [readsetId],
       'sequenceName': sequenceName,
@@ -91,13 +94,15 @@ class GenomicsAPI():
     return content
 
   def _get_content(self, path, method='POST', body=None):
+    # Genomics requires both the genomics scope and devstorage
     scope = [
       'https://www.googleapis.com/auth/genomics',
       'https://www.googleapis.com/auth/devstorage.read_write'
     ]
+    # The API Key may or may not be required.
     api_key = os.environ['API_KEY']
     credentials = AppAssertionCredentials(scope=scope)
-    http = httplib2.Http()
+    http = httplib2.Http(cache=memcache)
     http = credentials.authorize(http)
 
     try:

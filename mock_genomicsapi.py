@@ -36,6 +36,8 @@ class MockGenomicsAPI():
     the last 2 digits of the sequence number. For example a sequenceStart 68164
     should have a coverage of 64 reads.
     """
+    logging.debug("MockGenomicsAPI read_search() start: %d end: %d token: %s" %
+                  (sequenceStart, sequenceEnd, str(pageToken)))
 
     # If you have a pageToken then use that info to override start and end.
     if pageToken is not None:
@@ -43,8 +45,6 @@ class MockGenomicsAPI():
       sequenceStart = int(pair[0])
       sequenceEnd = int(pair[1])
 
-    logging.debug("MockGenomicsAPI read_search() called "
-                  "with start: %d end: %d" % (sequenceStart, sequenceEnd))
     output = {}
     # Start with the first page of 100.
     startRoundDown = sequenceStart / 100 * 100
@@ -52,7 +52,7 @@ class MockGenomicsAPI():
     startRoundDown += 100
     if startRoundDown < sequenceEnd:
       # Add a page token so you get called again to fetch the next page
-      output["pageToken"] = str.format("%d:%d" % (startRoundDown, sequenceEnd))
+      output["nextPageToken"] = str.format("%d:%d" % (startRoundDown, sequenceEnd))
 
     #logging.debug("%r" % output)
     return output
