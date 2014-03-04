@@ -242,8 +242,9 @@ class MainHandler(BaseRequestHandler):
       # If you are running the real pipeline map reduce then hit it.
       if self.request.get('runPipeline'):
         logging.debug("Running pipeline")
-        pipeline = CoveragePipeline(readsetId, sequenceName, sequenceStart,
-                                    sequenceEnd, useMockData)
+        pipeline = PipelineGenerateCoverage(readsetId, sequenceName,
+                                            sequenceStart, sequenceEnd,
+                                            useMockData)
         pipeline.start()
         self.redirect(pipeline.base_path + "/status?root="
                       + pipeline.pipeline_id)
@@ -347,19 +348,34 @@ def generate_coverage_reduce(key, values):
   yield "%d: %d\n" % (int(key), sum(int(value) for value in values))
 
 
-class CoveragePipeline(base_handler.PipelineBase):
-  """A pipeline to run Word count demo.
+def consolidate_output_map(file):
+  """Consolidate output map function."""
+  for line in file:
+    data = line.split(":")
+    if len(data) == 2:
+      yield (data[0], data[1])
+
+def consolidate_output_reduce(key, values):
+  """Generate coverage reduce function."""
+  logging.debug("Reducing Data-> %s: %s" %
+                (key,  sum(int(value) for value in values)))
+  yield "%d: %d\n" % (int(key), sum(int(value) for value in values))
+
+
+class PipelineGenerateCoverage(base_handler.PipelineBase):
+  """A pipeline to generate coverage data
 
   Args:
-    blobkey: blobkey to process as string. Should be a zip archive with
-      text files inside.
+    readsetId: the Id of the readset
   """
 
   def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
           useMockData):
     logging.debug("Running Pipeline for readsetId %s" % readsetId)
     bucket = os.environ['BUCKET']
-    output = yield mapreduce_pipeline.MapreducePipeline(
+
+    # In the first pipeline, generate the raw coverage data.
+    raw_coverage_data = yield mapreduce_pipeline.MapreducePipeline(
       "generate_coverage",
       "main.generate_coverage_map",
       "main.generate_coverage_reduce",
@@ -381,10 +397,55 @@ class CoveragePipeline(base_handler.PipelineBase):
         },
       },
       shards=16)
-    yield ProcessPipelineOutput(output)
+
+    # Pass the results on to the output consolidator.
+    yield PipelineConsolidateOutput(raw_coverage_data)
+
+class PipelineConsolidateOutput(base_handler.PipelineBase):
+  """A pipeline to proecss the result of the MapReduce job.
+
+  Args:
+    raw_coverage_data: the raw coverage data that is to be consolidated.
+  """
+
+  def run(self, raw_coverage_data):
+    bucket = os.environ['BUCKET']
+    logging.debug("Got %d raw coverage data output files to consolidate." %
+                  len(raw_coverage_data))
+
+    # Remove bucket from filenames. (Would be nice if you didn't have to do
+    # this.
+    paths = []
+    for file in raw_coverage_data:
+      paths.append(str.replace(str(file), "/" + bucket + "/", ""))
+
+    # Create another pipeline to combine the raw coverage data into a single
+    # file.
+    output = yield mapreduce_pipeline.MapreducePipeline(
+      "consolidate_output",
+      "main.consolidate_output_map",
+      "main.consolidate_output_reduce",
+      "mapreduce.input_readers._GoogleCloudStorageInputReader",
+      "mapreduce.output_writers._GoogleCloudStorageOutputWriter",
+      mapper_params={
+        "input_reader": {
+           "bucket_name": bucket,
+           "objects": paths,
+        },
+      },
+      reducer_params={
+        "output_writer": {
+          "bucket_name": bucket,
+          "content_type": "text/plain",
+        },
+      },
+      shards=1)
+
+    # Return back the final output results.
+    yield PipelineReturnResults(output)
 
 
-class ProcessPipelineOutput(base_handler.PipelineBase):
+class PipelineReturnResults(base_handler.PipelineBase):
   """A pipeline to proecss the result of the MapReduce job.
 
   Args:
@@ -392,11 +453,12 @@ class ProcessPipelineOutput(base_handler.PipelineBase):
   """
 
   def run(self, output):
-    blobstorePath = output[0]
-    # TODO determine if you are running locally or not and change the url
-    # accordingly.
-    url = str.replace(str(blobstorePath), "/blobstore/",
-                      "http://localhost:8000/blobstore/blob/")
+    logging.info('Number of output files: %d' % len(output))
+    file = output[0]
+    if os.environ['SERVER_SOFTWARE'].startswith('Development'):
+      url = "http://localhost:8080/_ah/gcs" + file
+    else:
+      url = "https://storage.cloud.google.com" + file
     logging.info("Pipeline Map Reduce has been completed. "
                  "Results can be found here: %s" % url)
 
