@@ -22,11 +22,17 @@ import logging
 import socket
 import os
 
+from common import Common
+
+from collections import defaultdict
+
 from google.appengine.api import urlfetch
 from google.appengine.api import memcache
 from google.appengine.api.urlfetch_errors import DeadlineExceededError
 
 from oauth2client.appengine import AppAssertionCredentials
+
+Common.initialize()
 
 # Increase timeout to the maximum for all requests and use caching
 urlfetch.set_default_fetch_deadline(60)
@@ -97,3 +103,24 @@ class GenomicsAPI():
       raise ApiException("Something went wrong with the API call. "
                          "Please check the logs for more details.")
     return content
+
+
+  @staticmethod
+  def compute_coverage(content, sequenceStart, sequenceEnd):
+    """Takes the json results from the Genomics API call and computes
+    coverage. """
+    coverage = defaultdict(int)
+    for read in content["reads"]:
+      # Check the read against every sequence.
+      for sequence in range(sequenceStart, sequenceEnd + 1):
+        # If the position is in the range then count it as being covered
+        # by that read.
+        read_end = read["position"] + len(read["alignedBases"])
+        if sequence >= read["position"] and sequence < read_end:
+          coverage[sequence] += 1
+        else:
+          # Force a 0 to be recorded for that sequence number.
+          coverage[sequence] += 0
+
+    logging.debug("Processed: %d reads." % len(content["reads"]))
+    return coverage

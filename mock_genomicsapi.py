@@ -18,6 +18,10 @@ Example Genomics Map Reduce
 
 import logging
 
+from common import Common
+
+Common.initialize()
+
 class MockGenomicsAPI():
   """ Provides a mock for the Genomics API so that you can call use this class
   instead of actual Genomics API calls for testing purposes.

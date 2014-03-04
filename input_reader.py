@@ -16,38 +16,19 @@ limitations under the License.
 Example Genomics Map Reduce Input Reader
 """
 
-import datetime
-import jinja2
-import json
 import logging
-import os
 import pickle
-import webapp2
 
-from google.appengine.ext import db
+from common import Common
 
-from google.appengine.api import files
-from google.appengine.api import taskqueue
-from google.appengine.api import users
-
-from oauth2client.appengine import AppAssertionCredentials
-
-from collections import defaultdict
-
-from mapreduce import base_handler
-from mapreduce import context
 from mapreduce import errors
 from mapreduce import input_readers
-from mapreduce import mapreduce_pipeline
-from mapreduce import operation
-from mapreduce import shuffler
 
 from genomicsapi import GenomicsAPI
 from genomicsapi import ApiException
 from mock_genomicsapi import MockGenomicsAPI
 
-from oauth2client import appengine
-
+Common.initialize()
 
 class GenomicsAPIInputReader(input_readers.InputReader):
   """Input reader for Genomics API
