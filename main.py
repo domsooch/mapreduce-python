@@ -31,23 +31,12 @@ from genomicsapi import ApiException
 from mock_genomicsapi import MockGenomicsAPI
 from pipeline import PipelineGenerateCoverage
 
-from oauth2client import appengine
-
 Common.initialize()
 
 JINJA_ENVIRONMENT = jinja2.Environment(
   loader=jinja2.FileSystemLoader('templates'),
   autoescape=True,
   extensions=['jinja2.ext.autoescape'])
-
-client_secrets = os.path.join(os.path.dirname(__file__), 'client_secrets.json')
-
-decorator = appengine.oauth2decorator_from_clientsecrets(
-  client_secrets,
-  scope=[
-    'https://www.googleapis.com/auth/genomics',
-    'https://www.googleapis.com/auth/devstorage.read_write'
-  ])
 
 
 class BaseRequestHandler(webapp2.RequestHandler):
@@ -105,9 +94,9 @@ class MainHandler(BaseRequestHandler):
     'runPipeline': False,
   }
 
-  @decorator.oauth_aware
   def get(self):
-    if decorator.has_credentials():
+    user = users.get_current_user()
+    if user:
       username = users.User().nickname()
 
       template = JINJA_ENVIRONMENT.get_template('index.html')
@@ -120,10 +109,9 @@ class MainHandler(BaseRequestHandler):
     else:
       template = JINJA_ENVIRONMENT.get_template('grantaccess.html')
       self.response.write(template.render({
-        'url': decorator.authorize_url()
+        'url': users.create_login_url('/')
       }))
 
-  @decorator.oauth_aware
   def post(self):
     # Collect inputs.
     readsetId = self.request.get("readsetId")
@@ -167,7 +155,10 @@ class MainHandler(BaseRequestHandler):
 
     elif self.request.get("submitReadSample"):
       # Read in local sample data which is based off of default settings.
-      body = MainHandler.DEFAULT_SETTINGS
+      readsetId = MainHandler.DEFAULT_SETTINGS['readsetId']
+      sequenceName = MainHandler.DEFAULT_SETTINGS['sequenceName']
+      sequenceStart = MainHandler.DEFAULT_SETTINGS['sequenceStart']
+      sequenceEnd = MainHandler.DEFAULT_SETTINGS['sequenceEnd']
       path = os.path.join(os.path.split(__file__)[0],
                           'static/listRead_SampleData.json')
       file = open(path, 'r')
@@ -209,7 +200,6 @@ class MainHandler(BaseRequestHandler):
 app = webapp2.WSGIApplication(
   [
     ('/', MainHandler),
-    (decorator.callback_path, decorator.callback_handler()),
   ],
   debug=True)
 
