@@ -23,3 +23,7 @@ limitations under the License.
 .width-300 {
   width: 300px;
 }
+
+.align-right {
+  text-align: right;
+}

@@ -37,10 +37,13 @@ limitations under the License.
 <body role="document">
 <div class="container theme-showcase" role="main">
   <h1>Genomics Python Map Reduce</h1>
-  Welcome {{ username }}.
-  <br/><br/>
   <div class="row">
     <div class="col-md-8">
+      <div class="row">
+        <div class="col-md-6">Welcome {{ username }}.</div>
+        <div class="col-md-6 align-right">Version: {{ version }}</div>
+      </div>
+      <br/><br/>
       <div class="panel panel-default">
         <div class="panel-heading">
           <h3 class="panel-title">Generate Coverage Statistics</h3>
@@ -80,7 +83,7 @@ limitations under the License.
               <div class="col-md-4">&nbsp;</div>
               <div class="col-md-8"><input type="checkbox" id="useMockData" name="useMockData"
                   {% if settings.useMockData %} checked{% endif %}/>
-                Use mock data (sequence last 2 digits = coverage).</div>
+                Use mock data (coverage = last 2 digits of sequence).</div>
             </div>
             <div class="row height-40">
               <div class="col-md-4">&nbsp;</div>

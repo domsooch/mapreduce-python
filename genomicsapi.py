@@ -45,6 +45,32 @@ class ApiException(Exception):
 class GenomicsAPI():
   """ Provides and interface for which to make Google Genomics API calls.
   """
+  TARGETS = [
+    {'name': "chr1", 'sequenceLength': 249250621},
+    {'name': "chr2", 'sequenceLength': 243199373},
+    {'name': "chr3", 'sequenceLength': 198022430},
+    {'name': "chr4", 'sequenceLength': 191154276},
+    {'name': "chr5", 'sequenceLength': 180915260},
+    {'name': "chr6", 'sequenceLength': 171115067},
+    {'name': "chr7", 'sequenceLength': 159138663},
+    {'name': "chr8", 'sequenceLength': 146364022},
+    {'name': "chr9", 'sequenceLength': 141213431},
+    {'name': "chr10", 'sequenceLength': 135534747},
+    {'name': "chr11", 'sequenceLength': 135006516},
+    {'name': "chr12", 'sequenceLength': 133851895},
+    {'name': "chr13", 'sequenceLength': 115169878},
+    {'name': "chr14", 'sequenceLength': 107349540},
+    {'name': "chr15", 'sequenceLength': 102531392},
+    {'name': "chr16", 'sequenceLength': 90354753},
+    {'name': "chr17", 'sequenceLength': 81195210},
+    {'name': "chr18", 'sequenceLength': 78077248},
+    {'name': "chr19", 'sequenceLength': 59128983},
+    {'name': "chr20", 'sequenceLength': 63025520},
+    {'name': "chr21", 'sequenceLength': 48129895},
+    {'name': "chr22", 'sequenceLength': 51304566},
+    {'name': "chrX", 'sequenceLength': 155270560},
+    {'name': "chrY", 'sequenceLength': 59373566},
+  ]
 
   def read_search(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
                   pageToken=None):
