@@ -27,3 +27,15 @@ limitations under the License.
 .align-right {
   text-align: right;
 }
+
+label {
+  font-weight: normal !important;
+}
+
+label.error {
+  color: #c9302c;
+}
+
+input.error {
+   border: 2px solid #c9302c;
+}
