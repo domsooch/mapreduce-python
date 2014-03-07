@@ -16,6 +16,7 @@ limitations under the License.
 Example Genomics Map Reduce
 """
 
+import datetime
 import jinja2
 import json
 import logging
@@ -71,11 +72,10 @@ class MainHandler(BaseRequestHandler):
     user = users.get_current_user()
     if user:
       username = users.User().nickname()
-      version = os.environ['CURRENT_VERSION_ID']
       template = JINJA_ENVIRONMENT.get_template('index.html')
       self.response.out.write(template.render({
         "username": username,
-        "version": version,
+        "version": self._get_version(),
         "targets": GenomicsAPI.TARGETS,
         "settings": MainHandler.DEFAULT_SETTINGS,
       }))
@@ -157,11 +157,10 @@ class MainHandler(BaseRequestHandler):
 
     # Render template with results or error.
     username = users.User().nickname()
-    version = os.environ['CURRENT_VERSION_ID']
     template = JINJA_ENVIRONMENT.get_template('index.html')
     self.response.out.write(template.render({
       "username": username,
-      "version": version,
+      "version": self._get_version(),
       "targets": GenomicsAPI.TARGETS,
       "settings": {
         'readsetId': readsetId,
@@ -173,6 +172,14 @@ class MainHandler(BaseRequestHandler):
       "errorMessage": errorMessage,
       "results": coverage,
     }))
+
+  def _get_version(self):
+    version = self.request.environ["CURRENT_VERSION_ID"].split('.')
+    name = version[0]
+    date = datetime.datetime.fromtimestamp(long(version[1]) >> 28)
+    if os.environ['SERVER_SOFTWARE'].startswith('Development'):
+      date = datetime.datetime.now()
+    return name + " as of " + date.strftime("%Y-%m-%d %X")
 
 app = webapp2.WSGIApplication(
   [
