@@ -103,34 +103,40 @@ limitations under the License.
                        name="submitReadSample" value="Sample Data">
               </div>
             </div>
-          </form>
-          {% if errorMessage %}
-            <div id="errorMessage" class="alert alert-danger">
-              {{ errorMessage }}
+            <div id="progress" name="progress" class="row height-40" style="display: none;">
+              <div class="col-md-4">&nbsp;</div>
+              <div class="col-md-8"><br><img src="/static/images/progress.gif" /></div>
             </div>
-          {% endif %}
-          {% if results %}
-          <b>Coverage Results:</b>
-          <br/><br/>
-          <div class="table-responsive">
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>Sequence</th>
-                  <th>Coverage</th>
-                </tr>
-              </thead>
-              <tbody>
-              {% for key, value in results.iteritems() %}
-                <tr>
-                  <td>{{ key }}</td>
-                  <td>{{ value }}</td>
-                </tr>
-              {% endfor %}
-              </tbody>
-            </table>
-           </div>
-          {% endif %}
+          </form>
+          <div id="coverageResults" name="coverageResults">
+            {% if errorMessage %}
+              <div id="errorMessage" class="alert alert-danger">
+                {{ errorMessage }}
+              </div>
+            {% endif %}
+            {% if results %}
+              <b>Coverage Results:</b>
+              <br/><br/>
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Sequence</th>
+                      <th>Coverage</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                  {% for key, value in results.iteritems() %}
+                    <tr>
+                      <td>{{ key }}</td>
+                      <td>{{ value }}</td>
+                    </tr>
+                  {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endif %}
+          </div>
         </div>
       </div>
     </div>

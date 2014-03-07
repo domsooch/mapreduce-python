@@ -55,7 +55,6 @@ $(function() {
 });
 
 function submitReadProcessing() {
-  //$('#submitRead').prop('value', 'Processing...');
-  //$('#submitRead').attr("disabled", true);
-  $('#errorMessage').hide();
+  $('#progress').show();
+  $('#coverageResults').hide();
 }
