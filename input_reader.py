@@ -169,14 +169,9 @@ class GenomicsAPIInputReader(input_readers.InputReader):
         # TODO not sure what we do here if we can't get content?
         raise StopIteration()
 
-      if content is not None:
-        if 'nextPageToken' in content:
-          self._nextPageToken = content["nextPageToken"]
-        if 'reads' in content:
-          return (content, self._sequenceStart, self._sequenceEnd)
-      else:
-        # TODO not sure what we do here if we got content but not as expected?
-        raise StopIteration()
+      if 'nextPageToken' in content:
+        self._nextPageToken = content["nextPageToken"]
+      return (content, self._sequenceStart, self._sequenceEnd)
     else:
       # All Done
       logging.debug("GenomicsAPIInputReader next() is Done "

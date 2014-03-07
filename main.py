@@ -149,15 +149,11 @@ class MainHandler(BaseRequestHandler):
       content = json.loads(content)
       reads = content['reads']
 
-    # If you have content then compute and store the results.
-    if reads is not None and len(reads) > 0:
-      # Calculate results
-      coverage = GenomicsAPI.compute_coverage(reads, sequenceStart, sequenceEnd)
-      # TODO make a setting to turn this on/off?
-      #GenomicsCoverageStatistics.store_coverage(readsetId, sequenceName,
-      #                                          coverage)
-    else:
-      errorMessage = "There API did not return any reads to process."
+    # Calculate results
+    coverage = GenomicsAPI.compute_coverage(reads, sequenceStart, sequenceEnd)
+    # TODO make a setting to turn this on/off?
+    #GenomicsCoverageStatistics.store_coverage(readsetId, sequenceName,
+    #                                          coverage)
 
     # Render template with results or error.
     username = users.User().nickname()
