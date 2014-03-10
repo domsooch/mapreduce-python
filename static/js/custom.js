@@ -18,13 +18,13 @@ $(function() {
     $.validator.addMethod(
         "end_greater_than_start",
         function(value, element) {
-            return $('#sequenceEnd').val() > $('#sequenceStart').val()
+            return parseInt($('#sequenceEnd').val(), 10) > parseInt($('#sequenceStart').val())
         },
         "End must be greater than or equal to start.");
     $.validator.addMethod(
         "start_less_than_end",
         function(value, element) {
-            return $('#sequenceStart').val() < $('#sequenceEnd').val()
+            return parseInt($('#sequenceStart').val()) < parseInt($('#sequenceEnd').val())
         },
         "Start must be less than or equal to end.");
     $("#coverageForm").validate({
@@ -49,12 +49,11 @@ $(function() {
             sequenceStart: {
                 required: "Please provide a Sequence End."
             }
-         }
-
+         },
+        submitHandler: function(form) {
+            $('#coverageResults').hide();
+            $('#progress').show();
+            form.submit();
+        }
     });
 });
-
-function submitReadProcessing() {
-  $('#progress').show();
-  $('#coverageResults').hide();
-}

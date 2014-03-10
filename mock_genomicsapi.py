@@ -36,7 +36,7 @@ class MockGenomicsAPI():
     the last 2 digits of the sequence number. For example a sequenceStart 68164
     should have a coverage of 64 reads.
     """
-    logging.debug("MockGenomicsAPI read_search() start: %d end: %d token: %s",
+    logging.info("MockGenomicsAPI read_search() start: %d end: %d token: %s",
                   sequenceStart, sequenceEnd, str(pageToken))
 
     # If you have a pageToken then use that info to override start and end.
