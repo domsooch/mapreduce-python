@@ -51,7 +51,8 @@ def consolidate_output_reduce(key, values):
   """Generate coverage reduce function."""
   logging.debug(
     "Reducing Data-> %s: %s", key, sum(int(value) for value in values))
-  yield "%d: %d\n" % (int(key), sum(int(value) for value in values))
+  # So that we get the data properly sorted numerically in the end.
+  yield "%09d: %d\n" % (int(key), sum(int(value) for value in values))
 
 
 class PipelineGenerateCoverage(base_handler.PipelineBase):
