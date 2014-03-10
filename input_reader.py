@@ -154,7 +154,7 @@ class GenomicsAPIInputReader(input_readers.InputReader):
       StopIteration: The list of files has been exhausted.
     """
 
-    # If it's your first time or you have a tokent then make the call.
+    # If it's your first time or you have a token then make the call.
     if self._firstTime or self._nextPageToken:
       # Determine if we are using the real or mock Genomics API.
       api = MockGenomicsAPI() if self._useMockData else GenomicsAPI()
@@ -169,8 +169,7 @@ class GenomicsAPIInputReader(input_readers.InputReader):
         # TODO not sure what we do here if we can't get content?
         raise StopIteration()
 
-      if 'nextPageToken' in content:
-        self._nextPageToken = content["nextPageToken"]
+      self._nextPageToken = content["nextPageToken"] if 'nextPageToken' in content else None
       return (content, self._sequenceStart, self._sequenceEnd)
     else:
       # All Done
