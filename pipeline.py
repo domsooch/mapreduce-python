@@ -49,8 +49,8 @@ def consolidate_output_map(file):
 
 def consolidate_output_reduce(key, values):
   """Generate coverage reduce function."""
-  logging.debug("Reducing Data-> %s: %s" %
-                (key,  sum(int(value) for value in values)))
+  logging.debug(
+    "Reducing Data-> %s: %s", key, sum(int(value) for value in values))
   yield "%d: %d\n" % (int(key), sum(int(value) for value in values))
 
 
@@ -63,7 +63,7 @@ class PipelineGenerateCoverage(base_handler.PipelineBase):
 
   def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
           useMockData):
-    logging.debug("Running Pipeline for readsetId %s" % readsetId)
+    logging.debug("Running Pipeline for readsetId: %s", readsetId)
     bucket = os.environ['BUCKET']
 
     # In the first pipeline, generate the raw coverage data.
@@ -102,7 +102,7 @@ class PipelineConsolidateOutput(base_handler.PipelineBase):
 
   def run(self, raw_coverage_data):
     bucket = os.environ['BUCKET']
-    logging.debug("Got %d raw coverage data output files to consolidate." %
+    logging.debug("Got %d raw coverage data output files to consolidate.",
                   len(raw_coverage_data))
 
     # Remove bucket from filenames. (Would be nice if you didn't have to do
@@ -145,12 +145,12 @@ class PipelineReturnResults(base_handler.PipelineBase):
   """
 
   def run(self, output):
-    logging.debug('Number of output files: %d' % len(output))
+    logging.debug('Number of output files: %d', len(output))
     file = output[0]
     if os.environ['SERVER_SOFTWARE'].startswith('Development'):
       url = "http://localhost:8080/_ah/gcs" + file
     else:
       url = "https://storage.cloud.google.com" + file
-    logging.info("Genomics pipeline completed. Results: %s" % url)
+    logging.info("Genomics pipeline completed. Results: %s", url)
 
 

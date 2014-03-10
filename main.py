@@ -19,7 +19,6 @@ Example Genomics Map Reduce
 import datetime
 import jinja2
 import json
-import logging
 import os
 import webapp2
 
@@ -105,7 +104,6 @@ class MainHandler(BaseRequestHandler):
       # Use the API to get the requested data.
       # If you are running the real pipeline map reduce then hit it.
       if self.request.get('runPipeline'):
-        logging.debug("Running pipeline")
         pipeline = PipelineGenerateCoverage(readsetId, sequenceName,
                                             sequenceStart, sequenceEnd,
                                             useMockData)

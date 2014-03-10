@@ -73,8 +73,8 @@ class GenomicsAPI():
 
   def read_search(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
                   pageToken=None):
-    logging.info("GenomicsAPI read_search() start: %d end: %d token: %s" %
-                  (sequenceStart, sequenceEnd, str(pageToken)))
+    logging.info("GenomicsAPI read_search() start: %d end: %d token: %s",
+                  sequenceStart, sequenceEnd, str(pageToken))
 
     # Create the body with the parameters.
     body = {
@@ -129,8 +129,8 @@ class GenomicsAPI():
       raise ApiException('API request malformed')
     elif response.status != 200:
       if 'error' in content:
-        logging.error("Error Code: %s Message: %s" %
-                      (content['error']['code'], content['error']['message']))
+        logging.error("Error Code: %s Message: %s",
+                      content['error']['code'], content['error']['message'])
       raise ApiException("Something went wrong with the API call. "
                          "Please check the logs for more details.")
     return content
@@ -158,5 +158,6 @@ class GenomicsAPI():
       for sequence in range(sequenceStart, sequenceEnd + 1):
         coverage[sequence] = 0
 
-    logging.debug("Processed: %d reads." % len(reads))
+    logging.info("Processed %d reads from start: %d to end: %d.",
+                 len(reads), sequenceStart, sequenceEnd)
     return coverage
