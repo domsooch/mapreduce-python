@@ -45,14 +45,15 @@ def consolidate_output_map(file):
   for line in file:
     data = line.split(":")
     if len(data) == 2:
-      yield (data[0], data[1])
+      # So that we get the data properly sorted numerically in the end.
+      key = str.format("%09d" % int(data[0]))
+      yield (key, data[1])
 
 def consolidate_output_reduce(key, values):
   """Generate coverage reduce function."""
   logging.debug(
-    "Reducing Data-> %s: %s", key, sum(int(value) for value in values))
-  # So that we get the data properly sorted numerically in the end.
-  yield "%09d: %d\n" % (int(key), sum(int(value) for value in values))
+    "Reducing Data-> %s: %d", key, sum(int(value) for value in values))
+  yield "%d: %d\n" % (int(key), sum(int(value) for value in values))
 
 
 class PipelineGenerateCoverage(base_handler.PipelineBase):
