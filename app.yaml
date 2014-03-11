@@ -41,14 +41,6 @@ handlers:
   login: required
 
 env_variables:
-  # This is found in the new developer console in the APIs & Auth -> Credentials
-  # page. Look at the Public API access section in the bottom right and copy the
-  # API Key here.
-  # It may no longer be required so you can leave it blank and try it, but if
-  # you get authentication errors or invalid grant errors you may want to
-  # provide it.
-  API_KEY: ''
-
   # Note: If you are running on a local dev app server (dev_appserver.py) you
   # will need to generate an OAuth Service Account and download the
   # private-key.p12 file. That will need to be converted to a private-key.pem
@@ -62,8 +54,24 @@ env_variables:
   # Otherwise you may get Error Code: 401 Message: Invalid Credentials when
   # calling the Genomics API.
 
-  # This is your bucket in Google Cloud Storage for which to write output files.
+  # This is found in the new developer console in the APIs & Auth -> Credentials
+  # page. Look at the Public API access section in the bottom right and copy the
+  # API Key here.
+  # It may no longer be required so you can leave it blank and try it, but if
+  # you get authentication errors or invalid grant errors you may want to
+  # provide it.
+  API_KEY: ''
+
+  # Required: The bucket in Google Cloud Storage for which to write intermediate
+  # files as well as final output files.
   BUCKET: 'your_bucket_name_goes_here'
+
+  # Optional: The directory where the final output files will be copied to.
+  # You don't need to include the bucket, it will be pre-pended automatically.
+  # Example values could be "genomics" or "genomics/output".
+  # If not specified you can browse your bucket for the output files created by
+  # the map reduce itself.
+  OUTPUT_DIRECTORY: 'genomics'
 
 libraries:
 - name: webapp2

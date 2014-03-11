@@ -12,6 +12,7 @@ __all__ = ['delete',
            'listbucket',
            'open',
            'stat',
+           '_copy2'
           ]
 
 import logging

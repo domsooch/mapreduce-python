@@ -16,6 +16,7 @@ limitations under the License.
 Example Genomics Map Reduce
 """
 
+import cloudstorage as gcs
 import logging
 import os
 
@@ -93,7 +94,8 @@ class PipelineGenerateCoverage(base_handler.PipelineBase):
       shards=16)
 
     # Pass the results on to the output consolidator.
-    yield PipelineConsolidateOutput(raw_coverage_data)
+    yield PipelineConsolidateOutput(readsetId, sequenceName, sequenceStart,
+                                    sequenceEnd, raw_coverage_data)
 
 class PipelineConsolidateOutput(base_handler.PipelineBase):
   """A pipeline to proecss the result of the MapReduce job.
@@ -102,7 +104,8 @@ class PipelineConsolidateOutput(base_handler.PipelineBase):
     raw_coverage_data: the raw coverage data that is to be consolidated.
   """
 
-  def run(self, raw_coverage_data):
+  def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
+          raw_coverage_data):
     bucket = os.environ['BUCKET']
     logging.debug("Got %d raw coverage data output files to consolidate.",
                   len(raw_coverage_data))
@@ -136,7 +139,8 @@ class PipelineConsolidateOutput(base_handler.PipelineBase):
       shards=1)
 
     # Return back the final output results.
-    yield PipelineReturnResults(output)
+    yield PipelineReturnResults(readsetId, sequenceName, sequenceStart,
+                                sequenceEnd, output)
 
 
 class PipelineReturnResults(base_handler.PipelineBase):
@@ -146,9 +150,22 @@ class PipelineReturnResults(base_handler.PipelineBase):
     output: the blobstore location where the output of the job is stored
   """
 
-  def run(self, output):
+  def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd, output):
     logging.debug('Number of output files: %d', len(output))
     file = output[0]
+
+    # If you have a setting to copy it over, do so
+    dir = os.environ['OUTPUT_DIRECTORY']
+    if dir is not None:
+      bucket = os.environ['BUCKET']
+      src = file
+      dst = str.format("/%s/%s/%s_%s_%s-%s.txt" % (
+        bucket, dir, str(readsetId), str(sequenceName), sequenceStart,
+        sequenceEnd))
+      gcs._copy2(src, dst)
+      logging.info("Copied output file to: %s" % dst)
+      file = dst
+
     if os.environ['SERVER_SOFTWARE'].startswith('Development'):
       url = "http://localhost:8080/_ah/gcs" + file
     else:
