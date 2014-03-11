@@ -140,7 +140,7 @@ class MainHandler(BaseRequestHandler):
       sequenceStart = MainHandler.DEFAULT_SETTINGS['sequenceStart']
       sequenceEnd = MainHandler.DEFAULT_SETTINGS['sequenceEnd']
       path = os.path.join(os.path.split(__file__)[0],
-                          'static/listRead_SampleData.json')
+                          'static/reads-search_sample_data.json')
       file = open(path, 'r')
       content = file.read()
       file.close()
