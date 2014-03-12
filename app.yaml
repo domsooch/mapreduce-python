@@ -73,6 +73,10 @@ env_variables:
   # the map reduce itself.
   OUTPUT_DIRECTORY: 'genomics'
 
+  # Required: The number of shards to use in the map reduce. Currently for large
+  # map reduce processes the suggested value is 200
+  MAPREDUCE_SHARDS: 200
+
 libraries:
 - name: webapp2
   version: "2.5.1"

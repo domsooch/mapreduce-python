@@ -68,6 +68,7 @@ class PipelineGenerateCoverage(base_handler.PipelineBase):
           useMockData):
     logging.debug("Running Pipeline for readsetId: %s", readsetId)
     bucket = os.environ['BUCKET']
+    shards = os.environ['MAPREDUCE_SHARDS']
 
     # In the first pipeline, generate the raw coverage data.
     raw_coverage_data = yield mapreduce_pipeline.MapreducePipeline(
@@ -91,7 +92,7 @@ class PipelineGenerateCoverage(base_handler.PipelineBase):
           "content_type": "text/plain",
         },
       },
-      shards=16)
+      shards=shards)
 
     # Pass the results on to the output consolidator.
     yield PipelineConsolidateOutput(readsetId, sequenceName, sequenceStart,
