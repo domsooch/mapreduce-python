@@ -158,7 +158,9 @@ class GenomicsAPIInputReader(input_readers.InputReader):
     if self._firstTime or self._nextPageToken:
       # Determine if we are using the real or mock Genomics API.
       api = MockGenomicsAPI() if self._useMockData else GenomicsAPI()
+
       # Get the results
+      content = None
       try:
         content = api.read_search(self._readsetId, self._sequenceName,
                                    self._sequenceStart, self._sequenceEnd,
@@ -166,7 +168,6 @@ class GenomicsAPIInputReader(input_readers.InputReader):
         self._firstTime = False
       except ApiException as exception:
         errorMessage = exception.message
-        # TODO not sure what we do here if we can't get content?
         raise StopIteration()
 
       self._nextPageToken = content["nextPageToken"] if 'nextPageToken' in content else None

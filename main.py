@@ -97,7 +97,6 @@ class MainHandler(BaseRequestHandler):
     # sure they are in bounds based on TARGETS.
 
     reads = []
-    coverage = None
     errorMessage = None
 
     if self.request.get("submitRead"):
@@ -147,8 +146,11 @@ class MainHandler(BaseRequestHandler):
       content = json.loads(content)
       reads = content['reads']
 
-    # Calculate results
-    coverage = GenomicsAPI.compute_coverage(reads, sequenceStart, sequenceEnd)
+    # If you didn't get an error compute the coverage.
+    coverage = None
+    if errorMessage is None:
+      coverage = GenomicsAPI.compute_coverage(reads, sequenceStart, sequenceEnd)
+
     # TODO make a setting to turn this on/off?
     #GenomicsCoverageStatistics.store_coverage(readsetId, sequenceName,
     #                                          coverage)
