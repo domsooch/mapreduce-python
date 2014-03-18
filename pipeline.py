@@ -51,9 +51,7 @@ def consolidate_output_map(file):
       yield (key, data[1])
 
 def consolidate_output_reduce(key, values):
-  """Generate coverage reduce function."""
-  logging.debug(
-    "Reducing Data-> %s: %d", key, sum(int(value) for value in values))
+  """Consolidate output reduce function."""
   yield "%d: %d\n" % (int(key), sum(int(value) for value in values))
 
 
@@ -66,7 +64,7 @@ class PipelineGenerateCoverage(base_handler.PipelineBase):
 
   def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
           useMockData):
-    logging.debug("Running Pipeline for readsetId: %s", readsetId)
+    #logging.debug("Running Pipeline for readsetId: %s", readsetId)
     bucket = os.environ['BUCKET']
     shards = os.environ['MAPREDUCE_SHARDS']
 
@@ -108,8 +106,8 @@ class PipelineConsolidateOutput(base_handler.PipelineBase):
   def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
           raw_coverage_data):
     bucket = os.environ['BUCKET']
-    logging.debug("Got %d raw coverage data output files to consolidate.",
-                  len(raw_coverage_data))
+    #logging.debug("Got %d raw coverage data output files to consolidate.",
+    #              len(raw_coverage_data))
 
     # Remove bucket from filenames. (Would be nice if you didn't have to do
     # this.
@@ -152,7 +150,7 @@ class PipelineReturnResults(base_handler.PipelineBase):
   """
 
   def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd, output):
-    logging.debug('Number of output files: %d', len(output))
+    #logging.debug('Number of output files: %d', len(output))
     file = output[0]
 
     # If you have a setting to copy it over, do so

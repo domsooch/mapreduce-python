@@ -60,7 +60,7 @@ class GenomicsAPIInputReader(input_readers.InputReader):
     Args:
       TBD
     """
-    logging.debug("GenomicsAPIInputReader __init__() is called.")
+    #logging.debug("GenomicsAPIInputReader __init__() is called.")
     self._readsetId = readsetId
     self._sequenceName = sequenceName
     self._sequenceStart = sequenceStart
@@ -82,7 +82,7 @@ class GenomicsAPIInputReader(input_readers.InputReader):
     """
     reader_spec = input_readers._get_params(mapper_spec, allow_old=False)
 
-    logging.debug("GenomicsAPIInputReader validate() is called.")
+    #logging.debug("GenomicsAPIInputReader validate() is called.")
 
     # Readset id is required.
     if cls.READSET_ID_PARAM not in reader_spec:
@@ -120,22 +120,22 @@ class GenomicsAPIInputReader(input_readers.InputReader):
     range_length = ((sequenceEnd + 1) - sequenceStart) // shard_count
     if range_length == 0:
       range_length = 1
-    logging.debug(
-      "GenomicsAPIInputReader split_input() shards: %d range_length: %d",
-      mapper_spec.shard_count, range_length)
+    #logging.debug(
+    #  "GenomicsAPIInputReader split_input() shards: %d range_length: %d",
+    #  mapper_spec.shard_count, range_length)
 
     # Split into shards
     readers = []
     for position in xrange(shard_count - 1):
       start = sequenceStart + (range_length * position)
       end = start + range_length - 1
-      logging.debug("GenomicsAPIInputReader split_input() start: %d end: %d.",
-                    start, end)
+      #logging.debug("GenomicsAPIInputReader split_input() start: %d end: %d.",
+      #              start, end)
       readers.append(cls(readsetId, sequenceName, start, end, useMockData))
     start = sequenceStart + (range_length * (shard_count - 1))
     end = sequenceEnd
-    logging.debug("GenomicsAPIInputReader split_input() start: %d end: %d.",
-                  start, end)
+    #logging.debug("GenomicsAPIInputReader split_input() start: %d end: %d.",
+    #              start, end)
     readers.append(cls(readsetId, sequenceName, start, end, useMockData))
 
     return readers
@@ -174,6 +174,6 @@ class GenomicsAPIInputReader(input_readers.InputReader):
       return (content, self._sequenceStart, self._sequenceEnd)
     else:
       # All Done
-      logging.debug("GenomicsAPIInputReader next() is Done start: %d end: %d.",
-                    self._sequenceStart, self._sequenceEnd)
+      #logging.debug("GenomicsAPIInputReader next() is Done start: %d end: %d.",
+      #              self._sequenceStart, self._sequenceEnd)
       raise StopIteration()

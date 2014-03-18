@@ -87,8 +87,8 @@ class GenomicsAPI():
       #'includeFields': ["position", "alignedBases"]
       }
 
-    logging.debug("Request Body:")
-    logging.debug(body)
+    #logging.debug("Request Body:")
+    #logging.debug(body)
 
     content = self._get_content("reads/search", body=body)
     return content
@@ -115,10 +115,10 @@ class GenomicsAPI():
       raise ApiException('API fetch timed out')
 
     # Log results to debug
-    logging.debug("Response:")
-    logging.debug(response)
-    logging.debug("Content:")
-    logging.debug(content)
+    #logging.debug("Response:")
+    #logging.debug(response)
+    #logging.debug("Content:")
+    #logging.debug(content)
 
     # Parse the content as json.
     content = json.loads(content)
