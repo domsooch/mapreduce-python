@@ -59,7 +59,7 @@ class MainHandler(BaseRequestHandler):
 
   # Provide default settings for the user that they can then override.
   DEFAULT_SETTINGS = {
-    'readsetId': "CJ_ppJ-WCxD-2oXg667IhDM=",
+    'readsetId': "CJ_ppJ-WCxDxrtDr5fGIhBA=",
     'sequenceName': "chr20",
     'sequenceStart': 68101,
     'sequenceEnd': 68164,
