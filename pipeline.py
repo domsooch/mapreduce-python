@@ -22,10 +22,14 @@ import os
 
 from common import Common
 from genomicsapi import GenomicsAPI
+from google.appengine.api import app_identity
 from mapreduce import base_handler
 from mapreduce import mapreduce_pipeline
 
 Common.initialize()
+
+def get_bucket_name():
+  return os.getenv('BUCKET', app_identity.get_default_gcs_bucket_name())
 
 def generate_coverage_map(data):
   """Generate coverage map function."""
@@ -65,7 +69,7 @@ class PipelineGenerateCoverage(base_handler.PipelineBase):
   def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
           useMockData):
     #logging.debug("Running Pipeline for readsetId: %s", readsetId)
-    bucket = os.environ['BUCKET']
+    bucket = get_bucket_name()
     shards = os.environ['MAPREDUCE_SHARDS']
 
     # In the first pipeline, generate the raw coverage data.
@@ -105,7 +109,7 @@ class PipelineConsolidateOutput(base_handler.PipelineBase):
 
   def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
           raw_coverage_data):
-    bucket = os.environ['BUCKET']
+    bucket = get_bucket_name()
     #logging.debug("Got %d raw coverage data output files to consolidate.",
     #              len(raw_coverage_data))
 
@@ -156,7 +160,7 @@ class PipelineReturnResults(base_handler.PipelineBase):
     # If you have a setting to copy it over, do so
     dir = os.environ['OUTPUT_DIRECTORY']
     if dir is not None:
-      bucket = os.environ['BUCKET']
+      bucket = get_bucket_name()
       src = file
       dst = str.format("/%s/%s/%s_%s_%s-%s.txt" % (
         bucket, dir, str(readsetId), str(sequenceName), sequenceStart,

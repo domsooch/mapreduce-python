@@ -62,9 +62,15 @@ env_variables:
   # provide it.
   API_KEY: ''
 
-  # Required: The bucket in Google Cloud Storage for which to write intermediate
-  # files as well as final output files.
-  BUCKET: 'your_bucket_name_goes_here'
+  # The bucket in Google Cloud Storage for which to write intermediate files as
+  # well as final output files.
+  # If you have a default bucket enabled then you can omit the setting of this
+  # variable. Otherwise the bucket needs to be specified.
+  # See this URL for information on activating GCS and using the
+  # default bucket:
+  #     https://developers.google.com/appengine/docs/python/
+  #         googlecloudstorageclient/activate
+  #BUCKET: 'bucket_name_goes_here'
 
   # Optional: The directory where the final output files will be copied to.
   # You don't need to include the bucket, it will be pre-pended automatically.
