@@ -97,7 +97,7 @@ class PipelineGenerateCoverage(base_handler.PipelineBase):
                                     sequenceEnd, raw_coverage_data)
 
 class PipelineConsolidateOutput(base_handler.PipelineBase):
-  """A pipeline to proecss the result of the MapReduce job.
+  """A pipeline to process the result of the MapReduce job.
 
   Args:
     raw_coverage_data: the raw coverage data that is to be consolidated.
