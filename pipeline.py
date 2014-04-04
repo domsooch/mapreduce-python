@@ -96,9 +96,44 @@ class PipelineGenerateCoverage(base_handler.PipelineBase):
       },
       shards=shards)
 
-    # Pass the results on to the output consolidator.
-    yield PipelineConsolidateOutput(readsetId, sequenceName, sequenceStart,
-                                    sequenceEnd, raw_coverage_data)
+    # Since running the MR to consolidate the output take a very long time,
+    # for now just return the individual results.
+    yield PipelineReturnIndividualResults(readsetId, sequenceName,
+                                          sequenceStart, sequenceEnd,
+                                          raw_coverage_data)
+
+class PipelineReturnIndividualResults(base_handler.PipelineBase):
+  """A pipeline to proecss the result of the MapReduce job.
+
+  Args:
+    output: the blobstore location where the output of the job is stored
+  """
+
+  def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd, files):
+    #logging.debug('Number of output files: %d', len(output))
+
+    # If you have a setting to copy it over, do so
+    local = os.environ['SERVER_SOFTWARE'].startswith('Development')
+    bucket = get_bucket_name()
+    dir = os.getenv('OUTPUT_DIRECTORY', 'genomics_mr_results')
+    path = str.format("/%s/%s/%s/%s" %
+                      (bucket, dir, str(readsetId), str(sequenceName)))
+    shard = 0
+    for file in files:
+      dst = str.format("%s/%s-%s_shard-%03d.txt" %
+                       (path, sequenceStart, sequenceEnd, shard))
+      gcs._copy2(file, dst)
+      if local:
+        url = "http://localhost:8080/_ah/gcs" + dst
+        logging.info("Output file available here: %s", url)
+      shard += 1
+
+    if local:
+      logging.info("Genomics pipeline completed. Output files listed above.")
+    else:
+      url = "https://storage.cloud.google.com" + path
+      logging.info("Genomics pipeline completed. Results: %s", url)
+
 
 class PipelineConsolidateOutput(base_handler.PipelineBase):
   """A pipeline to process the result of the MapReduce job.
@@ -142,11 +177,11 @@ class PipelineConsolidateOutput(base_handler.PipelineBase):
       shards=1)
 
     # Return back the final output results.
-    yield PipelineReturnResults(readsetId, sequenceName, sequenceStart,
-                                sequenceEnd, output)
+    yield PipelineReturnConsolidatedResults(readsetId, sequenceName,
+                                            sequenceStart, sequenceEnd, output)
 
 
-class PipelineReturnResults(base_handler.PipelineBase):
+class PipelineReturnConsolidatedResults(base_handler.PipelineBase):
   """A pipeline to proecss the result of the MapReduce job.
 
   Args:
@@ -174,5 +209,4 @@ class PipelineReturnResults(base_handler.PipelineBase):
     else:
       url = "https://storage.cloud.google.com" + file
     logging.info("Genomics pipeline completed. Results: %s", url)
-
 

@@ -75,9 +75,8 @@ env_variables:
   # Optional: The directory where the final output files will be copied to.
   # You don't need to include the bucket, it will be pre-pended automatically.
   # Example values could be "genomics" or "genomics/output".
-  # If not specified you can browse your bucket for the output files created by
-  # the map reduce itself.
-  OUTPUT_DIRECTORY: 'genomics'
+  # If not specified then a default of "genomics_mr_results" will be used.
+  #OUTPUT_DIRECTORY: 'genomics'
 
   # Required: The number of shards to use in the map reduce. Currently for large
   # map reduce processes the suggested value is 200
