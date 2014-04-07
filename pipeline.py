@@ -103,7 +103,7 @@ class PipelineGenerateCoverage(base_handler.PipelineBase):
                                           raw_coverage_data)
 
 class PipelineReturnIndividualResults(base_handler.PipelineBase):
-  """A pipeline to proecss the result of the MapReduce job.
+  """A pipeline to process the result of the MapReduce job.
 
   Args:
     output: the blobstore location where the output of the job is stored
@@ -182,7 +182,7 @@ class PipelineConsolidateOutput(base_handler.PipelineBase):
 
 
 class PipelineReturnConsolidatedResults(base_handler.PipelineBase):
-  """A pipeline to proecss the result of the MapReduce job.
+  """A pipeline to process the result of the MapReduce job.
 
   Args:
     output: the blobstore location where the output of the job is stored

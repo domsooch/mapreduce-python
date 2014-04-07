@@ -25,7 +25,6 @@ import webapp2
 from google.appengine.api import users
 
 from common import Common
-from database import GenomicsCoverageStatistics
 from genomicsapi import GenomicsAPI
 from genomicsapi import ApiException
 from mock_genomicsapi import MockGenomicsAPI
@@ -39,20 +38,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
   extensions=['jinja2.ext.autoescape'])
 
 
-class BaseRequestHandler(webapp2.RequestHandler):
-  def handle_exception(self, exception, debug_mode):
-    if isinstance(exception, ApiException):
-      # ApiExceptions are expected, and will return nice error messages
-      # to the client
-      self.response.write(exception.message)
-      self.response.set_status(400)
-    else:
-      # All other exceptions are unexpected and should crash properly
-      return webapp2.RequestHandler.handle_exception(
-        self, exception, debug_mode)
-
-
-class MainHandler(BaseRequestHandler):
+class MainHandler(webapp2.RequestHandler):
   """The main page that users will interact with, which presents users with
   the ability to upload new data or run MapReduce jobs on their existing data.
   """
@@ -68,22 +54,14 @@ class MainHandler(BaseRequestHandler):
   }
 
   def get(self):
-    user = users.get_current_user()
-    if user:
-      username = users.User().nickname()
-      template = JINJA_ENVIRONMENT.get_template('index.html')
-      self.response.out.write(template.render({
-        "username": username,
-        "version": self._get_version(),
-        "targets": GenomicsAPI.TARGETS,
-        "settings": MainHandler.DEFAULT_SETTINGS,
-      }))
-
-    else:
-      template = JINJA_ENVIRONMENT.get_template('grantaccess.html')
-      self.response.write(template.render({
-        'url': users.create_login_url('/')
-      }))
+    username = users.User().nickname()
+    template = JINJA_ENVIRONMENT.get_template('index.html')
+    self.response.out.write(template.render({
+      "username": username,
+      "version": self._get_version(),
+      "targets": GenomicsAPI.TARGETS,
+      "settings": MainHandler.DEFAULT_SETTINGS,
+    }))
 
   def post(self):
     # Collect inputs.
