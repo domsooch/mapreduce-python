@@ -26,7 +26,6 @@ from mapreduce import input_readers
 
 from genomicsapi import GenomicsAPI
 from genomicsapi import ApiException
-from mock_genomicsapi import MockGenomicsAPI
 
 Common.initialize()
 
@@ -39,7 +38,6 @@ class GenomicsAPIInputReader(input_readers.InputReader):
   SEQUENCE_NAME_PARAM = "sequenceName"
   SEQUEQNCE_START_PARAM = "sequenceStart"
   SEQUEQNCE_END_PARAM = "sequenceEnd"
-  USE_MOCK_DATA_PARAM = "useMockData"
 
   # Maximum number of shards to allow.
   _MAX_SHARD_COUNT = 256
@@ -54,7 +52,7 @@ class GenomicsAPIInputReader(input_readers.InputReader):
   # 2. A shard has to process files from a contiguous namespace.
   #    May introduce staggering shard.
   def __init__(self, readsetId=None, sequenceName=None, sequenceStart=None,
-               sequenceEnd=None, useMockData=True):
+               sequenceEnd=None):
     """Initialize a GenomicsAPIInputReader instance.
 
     Args:
@@ -65,7 +63,6 @@ class GenomicsAPIInputReader(input_readers.InputReader):
     self._sequenceName = sequenceName
     self._sequenceStart = sequenceStart
     self._sequenceEnd = sequenceEnd
-    self._useMockData = useMockData
     self._firstTime = True
     self._nextPageToken = None
 
@@ -109,7 +106,6 @@ class GenomicsAPIInputReader(input_readers.InputReader):
     sequenceName = reader_spec[cls.SEQUENCE_NAME_PARAM]
     sequenceStart = reader_spec.get(cls.SEQUEQNCE_START_PARAM)
     sequenceEnd = reader_spec.get(cls.SEQUEQNCE_END_PARAM)
-    useMockData = reader_spec.get(cls.USE_MOCK_DATA_PARAM)
 
     # TODO if you are doing all sequences then you need to take sequence name
     # into account as well.
@@ -131,12 +127,12 @@ class GenomicsAPIInputReader(input_readers.InputReader):
       end = start + range_length - 1
       #logging.debug("GenomicsAPIInputReader split_input() start: %d end: %d.",
       #              start, end)
-      readers.append(cls(readsetId, sequenceName, start, end, useMockData))
+      readers.append(cls(readsetId, sequenceName, start, end))
     start = sequenceStart + (range_length * (shard_count - 1))
     end = sequenceEnd
     #logging.debug("GenomicsAPIInputReader split_input() start: %d end: %d.",
     #              start, end)
-    readers.append(cls(readsetId, sequenceName, start, end, useMockData))
+    readers.append(cls(readsetId, sequenceName, start, end))
 
     return readers
 
@@ -156,8 +152,7 @@ class GenomicsAPIInputReader(input_readers.InputReader):
 
     # If it's your first time or you have a token then make the call.
     if self._firstTime or self._nextPageToken:
-      # Determine if we are using the real or mock Genomics API.
-      api = MockGenomicsAPI() if self._useMockData else GenomicsAPI()
+      api = GenomicsAPI()
 
       # Get the results
       content = None

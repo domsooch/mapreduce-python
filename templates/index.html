@@ -84,23 +84,8 @@ limitations under the License.
             </div>
             <div class="row height-40">
               <div class="col-md-4">&nbsp;</div>
-              <div class="col-md-8"><input type="checkbox" id="useMockData" name="useMockData"
-                  {% if settings.useMockData %} checked{% endif %}/>
-                Use mock data (coverage = last 2 digits of sequence).</div>
-            </div>
-            <div class="row height-40">
-              <div class="col-md-4">&nbsp;</div>
-              <div class="col-md-8"><input type="checkbox" id="runPipeline" name="runPipeline"
-                  {% if settings.runPipeline %} checked{% endif %}/>
-                Run as a pipeline Map Reduce.</div>
-            </div>
-            <div class="row height-40">
-              <div class="col-md-4">&nbsp;</div>
               <div class="col-md-8">
                 <input class="btn btn-primary" type="submit" id="submitRead" name="submitRead" value="Submit" />
-                &nbsp;or instead, use <a href="/static/reads-search_sample_data.json" target="_blank">this</a>:&nbsp;
-                <input class="btn btn-info" type="submit" id="submitReadSample"
-                       name="submitReadSample" value="Sample Data" />
               </div>
             </div>
             <div id="progress" name="progress" class="row height-40" style="display: none;">

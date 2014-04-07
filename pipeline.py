@@ -66,8 +66,7 @@ class PipelineGenerateCoverage(base_handler.PipelineBase):
     readsetId: the Id of the readset
   """
 
-  def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
-          useMockData):
+  def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd):
     #logging.debug("Running Pipeline for readsetId: %s", readsetId)
     bucket = get_bucket_name()
     shards = os.environ['MAPREDUCE_SHARDS']
@@ -85,7 +84,6 @@ class PipelineGenerateCoverage(base_handler.PipelineBase):
           "sequenceName": sequenceName,
           "sequenceStart": sequenceStart,
           "sequenceEnd": sequenceEnd,
-          "useMockData": useMockData,
         },
       },
       reducer_params={

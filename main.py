@@ -18,7 +18,6 @@ Example Genomics Map Reduce
 
 import datetime
 import jinja2
-import json
 import os
 import webapp2
 
@@ -26,8 +25,6 @@ from google.appengine.api import users
 
 from common import Common
 from genomicsapi import GenomicsAPI
-from genomicsapi import ApiException
-from mock_genomicsapi import MockGenomicsAPI
 from pipeline import PipelineGenerateCoverage
 
 Common.initialize()
@@ -49,8 +46,6 @@ class MainHandler(webapp2.RequestHandler):
     'sequenceName': "chr20",
     'sequenceStart': 68101,
     'sequenceEnd': 68164,
-    'useMockData': False,
-    'runPipeline': False,
   }
 
   def get(self):
@@ -69,87 +64,13 @@ class MainHandler(webapp2.RequestHandler):
     sequenceName = self.request.get('sequenceName')
     sequenceStart = int(self.request.get('sequenceStart'))
     sequenceEnd = int(self.request.get('sequenceEnd'))
-    useMockData = self.request.get('useMockData')
 
-    # TODO: Validate inputs such as sequence start and end to make
-    # sure they are in bounds based on TARGETS.
-
-    reads = []
-    errorMessage = None
-
-    if self.request.get("submitRead"):
-      # Use the API to get the requested data.
-      # If you are running the real pipeline map reduce then hit it.
-      if self.request.get('runPipeline'):
-        pipeline = PipelineGenerateCoverage(readsetId, sequenceName,
-                                            sequenceStart, sequenceEnd,
-                                            useMockData)
-        pipeline.start()
-        self.redirect(pipeline.base_path + "/status?root="
-                      + pipeline.pipeline_id)
-        return
-
-      # Make the API calls directly from the web ui.
-      api = GenomicsAPI()
-      # Use the Mock API if requested.
-      if useMockData:
-        api = MockGenomicsAPI()
-
-      # Make the call.
-      try:
-        pageToken = None
-        firstTime = True
-        while firstTime or pageToken is not None:
-          content = api.read_search(readsetId, sequenceName, sequenceStart,
-                                    sequenceEnd, pageToken)
-          firstTime = False
-          if 'reads' in content:
-            reads += content['reads']
-          pageToken = content['nextPageToken'] if 'nextPageToken' in content\
-            else None
-      except ApiException as exception:
-        errorMessage = exception.message
-
-    elif self.request.get("submitReadSample"):
-      # Read in local sample data which is based off of default settings.
-      readsetId = MainHandler.DEFAULT_SETTINGS['readsetId']
-      sequenceName = MainHandler.DEFAULT_SETTINGS['sequenceName']
-      sequenceStart = MainHandler.DEFAULT_SETTINGS['sequenceStart']
-      sequenceEnd = MainHandler.DEFAULT_SETTINGS['sequenceEnd']
-      path = os.path.join(os.path.split(__file__)[0],
-                          'static/reads-search_sample_data.json')
-      file = open(path, 'r')
-      content = file.read()
-      file.close()
-      content = json.loads(content)
-      reads = content['reads']
-
-    # If you didn't get an error compute the coverage.
-    coverage = None
-    if errorMessage is None:
-      coverage = GenomicsAPI.compute_coverage(reads, sequenceStart, sequenceEnd)
-
-    # TODO make a setting to turn this on/off?
-    #GenomicsCoverageStatistics.store_coverage(readsetId, sequenceName,
-    #                                          coverage)
-
-    # Render template with results or error.
-    username = users.User().nickname()
-    template = JINJA_ENVIRONMENT.get_template('index.html')
-    self.response.out.write(template.render({
-      "username": username,
-      "version": self._get_version(),
-      "targets": GenomicsAPI.TARGETS,
-      "settings": {
-        'readsetId': readsetId,
-        'sequenceName': sequenceName,
-        'sequenceStart': sequenceStart,
-        'sequenceEnd': sequenceEnd,
-        'useMockData': useMockData,
-      },
-      "errorMessage": errorMessage,
-      "results": coverage,
-    }))
+    # Start a mapreduce pipeline to generate coverage
+    # Then redirect to the status page
+    pipeline = PipelineGenerateCoverage(readsetId, sequenceName,
+                                        sequenceStart, sequenceEnd)
+    pipeline.start()
+    self.redirect(pipeline.base_path + "/status?root=" + pipeline.pipeline_id)
 
   def _get_version(self):
     version = self.request.environ["CURRENT_VERSION_ID"].split('.')
