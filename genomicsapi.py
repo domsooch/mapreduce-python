@@ -85,21 +85,15 @@ class GenomicsAPI():
       'pageToken': pageToken
       # May want to specify just the fields that we need.
       #'includeFields': ["position", "alignedBases"]
-      }
+    }
 
-    #logging.debug("Request Body:")
-    #logging.debug(body)
-
-    content = self._get_content("reads/search", body=body)
-    return content
+    return self._get_content("reads/search", body=body)
 
   def _get_content(self, path, method='POST', body=None):
-    # Genomics requires both the genomics scope and devstorage
     scope = [
-      'https://www.googleapis.com/auth/genomics',
-      'https://www.googleapis.com/auth/devstorage.read_write'
+      'https://www.googleapis.com/auth/genomics'
     ]
-    # The API Key may or may not be required.
+    # The API Key is required when deployed to app engine
     api_key = os.environ['API_KEY']
     credentials = AppAssertionCredentials(scope=scope)
     http = httplib2.Http(cache=memcache)
@@ -114,25 +108,19 @@ class GenomicsAPI():
     except DeadlineExceededError:
       raise ApiException('API fetch timed out')
 
-    # Log results to debug
-    #logging.debug("Response:")
-    #logging.debug(response)
-    #logging.debug("Content:")
-    #logging.debug(content)
+    try:
+      content = json.loads(content)
+    except ValueError:
+      logging.error("non-json api content %s" % content)
+      raise ApiException('The API returned invalid JSON')
 
-    # Parse the content as json.
-    content = json.loads(content)
-
-    if response.status == 404:
-      raise ApiException('API not found')
-    elif response.status == 400:
-      raise ApiException('API request malformed')
-    elif response.status != 200:
+    if response.status >= 300:
+      logging.error("error api response %s" % response)
+      logging.error("error api content %s" % content)
       if 'error' in content:
-        logging.error("Error Code: %s Message: %s",
-                      content['error']['code'], content['error']['message'])
-      raise ApiException("Something went wrong with the API call. "
-                         "Please check the logs for more details.")
+        raise ApiException(content['error']['message'])
+      else:
+        raise ApiException('Something went wrong with the API call!')
     return content
 
 

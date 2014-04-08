@@ -45,20 +45,8 @@ class GenomicsAPIInputReader(input_readers.InputReader):
   # Other internal configuration constants
   _JSON_PICKLE = "pickle"
 
-  # Input reader can also take in start and end filenames and do
-  # listbucket. This saves space but has two cons.
-  # 1. Files to read are less well defined: files can be added or removed over
-  #    the lifetime of the MR job.
-  # 2. A shard has to process files from a contiguous namespace.
-  #    May introduce staggering shard.
   def __init__(self, readsetId=None, sequenceName=None, sequenceStart=None,
                sequenceEnd=None):
-    """Initialize a GenomicsAPIInputReader instance.
-
-    Args:
-      TBD
-    """
-    #logging.debug("GenomicsAPIInputReader __init__() is called.")
     self._readsetId = readsetId
     self._sequenceName = sequenceName
     self._sequenceStart = sequenceStart
@@ -78,8 +66,6 @@ class GenomicsAPIInputReader(input_readers.InputReader):
         as missing the bucket name or providing an invalid bucket name.
     """
     reader_spec = input_readers._get_params(mapper_spec, allow_old=False)
-
-    #logging.debug("GenomicsAPIInputReader validate() is called.")
 
     # Readset id is required.
     if cls.READSET_ID_PARAM not in reader_spec:
@@ -116,22 +102,20 @@ class GenomicsAPIInputReader(input_readers.InputReader):
     range_length = ((sequenceEnd + 1) - sequenceStart) // shard_count
     if range_length == 0:
       range_length = 1
-    #logging.debug(
-    #  "GenomicsAPIInputReader split_input() shards: %d range_length: %d",
-    #  mapper_spec.shard_count, range_length)
 
     # Split into shards
     readers = []
     for position in xrange(shard_count - 1):
       start = sequenceStart + (range_length * position)
       end = start + range_length - 1
-      #logging.debug("GenomicsAPIInputReader split_input() start: %d end: %d.",
-      #              start, end)
+      logging.debug("GenomicsAPIInputReader split_input() start: %d end: %d.",
+                   start, end)
       readers.append(cls(readsetId, sequenceName, start, end))
     start = sequenceStart + (range_length * (shard_count - 1))
     end = sequenceEnd
-    #logging.debug("GenomicsAPIInputReader split_input() start: %d end: %d.",
-    #              start, end)
+
+    logging.debug("GenomicsAPIInputReader split_input() start: %d end: %d.",
+                 start, end)
     readers.append(cls(readsetId, sequenceName, start, end))
 
     return readers
@@ -147,7 +131,7 @@ class GenomicsAPIInputReader(input_readers.InputReader):
   def next(self):
     """Returns the data from the call to the GenomicsAPI
     Raises:
-      StopIteration: The list of files has been exhausted.
+      StopIteration: The data has been exhausted.
     """
 
     # If it's your first time or you have a token then make the call.
@@ -155,20 +139,16 @@ class GenomicsAPIInputReader(input_readers.InputReader):
       api = GenomicsAPI()
 
       # Get the results
-      content = None
       try:
         content = api.read_search(self._readsetId, self._sequenceName,
                                    self._sequenceStart, self._sequenceEnd,
                                    self._nextPageToken)
         self._firstTime = False
       except ApiException as exception:
-        errorMessage = exception.message
+        logging.warning("API exception: %s" % exception.message)
         raise StopIteration()
 
       self._nextPageToken = content["nextPageToken"] if 'nextPageToken' in content else None
-      return (content, self._sequenceStart, self._sequenceEnd)
+      return content, self._sequenceStart, self._sequenceEnd
     else:
-      # All Done
-      #logging.debug("GenomicsAPIInputReader next() is Done start: %d end: %d.",
-      #              self._sequenceStart, self._sequenceEnd)
       raise StopIteration()
