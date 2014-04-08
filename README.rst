@@ -39,6 +39,23 @@ Without this setup, the Genomics API will return ``Invalid Credentials``.
 Visit ``http://localhost:8080`` to use a simple UI for launching the MapReduce.
 
 
+Deploying on app engine
+~~~~~~~~~~~~~~~~~~~~~~~
+
+To deploy on app engine, you'll need to make sure the ``API_KEY`` variable
+in the ``app.yaml`` file is properly set.
+
+The app engine project that you will be deploying to needs to have access to the
+Genomics API. Once that's set up, go to the APIs & Auth -> Credentials page
+in the Google Cloud Console.
+
+In the bottom section called "Public API access", there should be an API key
+that you can copy into the yaml file. Create a new key if there isn't one
+present already.
+
+For easy development, make sure your API key and the privatekey.12 file come
+from the same project. Mismatches will cause exceptions.
+
 Code layout
 -----------
 
