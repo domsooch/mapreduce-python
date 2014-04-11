@@ -84,7 +84,7 @@ class GenomicsAPI():
       'sequenceEnd': sequenceEnd,
       'pageToken': pageToken
       # May want to specify just the fields that we need.
-      #'includeFields': ["position", "alignedBases"]
+      #fields': "nextPageToken,reads(position,alignedBases)"
     }
 
     return self._get_content("reads/search", body=body)
@@ -128,8 +128,6 @@ class GenomicsAPI():
   def compute_coverage(reads, sequenceStart, sequenceEnd):
     """Takes the json results from the Genomics API call and computes
     coverage. """
-    #logging.info("Computing coverage from start: %d to end: %d.",
-    #             sequenceStart, sequenceEnd)
     coverage = defaultdict(int)
     if len(reads) > 0:
       for read in reads:

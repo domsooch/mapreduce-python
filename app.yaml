@@ -57,10 +57,7 @@ env_variables:
 
   # This is found in the new developer console in the APIs & Auth -> Credentials
   # page. Look at the Public API access section in the bottom right and copy the
-  # API Key here.
-  # It may no longer be required so you can leave it blank and try it, but if
-  # you get authentication errors or invalid grant errors you may want to
-  # provide it.
+  # API Key here. It is only required when this project is deployed.
   API_KEY: ''
 
   # The bucket in Google Cloud Storage for which to write intermediate files as

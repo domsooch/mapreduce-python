@@ -39,7 +39,7 @@ limitations under the License.
 </head>
 <body role="document">
 <div class="container theme-showcase" role="main">
-  <h1>Genomics Python Map Reduce</h1>
+  <h1>Genomics API Python Map Reduce</h1>
   <div class="row">
     <div class="col-md-8">
       <div class="row">
@@ -97,28 +97,6 @@ limitations under the License.
             {% if errorMessage %}
               <div id="errorMessage" class="alert alert-danger">
                 {{ errorMessage }}
-              </div>
-            {% endif %}
-            {% if results %}
-              <b>Coverage Results:</b>
-              <br/><br/>
-              <div class="table-responsive">
-                <table class="table table-striped">
-                  <thead>
-                    <tr>
-                      <th>Sequence</th>
-                      <th>Coverage</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                  {% for key, value in results.iteritems() %}
-                    <tr>
-                      <td>{{ key }}</td>
-                      <td>{{ value }}</td>
-                    </tr>
-                  {% endfor %}
-                  </tbody>
-                </table>
               </div>
             {% endif %}
           </div>

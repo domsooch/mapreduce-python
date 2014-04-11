@@ -42,8 +42,8 @@ class MainHandler(webapp2.RequestHandler):
 
   # Provide default settings for the user that they can then override.
   DEFAULT_SETTINGS = {
-    'readsetId': "CJ_ppJ-WCxDxrtDr5fGIhBA=",
-    'sequenceName': "chr20",
+    'readsetId': 'CJ_ppJ-WCxDxrtDr5fGIhBA=',
+    'sequenceName': 'chr20',
     'sequenceStart': 68101,
     'sequenceEnd': 68164,
   }
@@ -52,15 +52,15 @@ class MainHandler(webapp2.RequestHandler):
     username = users.User().nickname()
     template = JINJA_ENVIRONMENT.get_template('index.html')
     self.response.out.write(template.render({
-      "username": username,
-      "version": self._get_version(),
-      "targets": GenomicsAPI.TARGETS,
-      "settings": MainHandler.DEFAULT_SETTINGS,
+      'username': username,
+      'version': self._get_version(),
+      'targets': GenomicsAPI.TARGETS,
+      'settings': MainHandler.DEFAULT_SETTINGS,
     }))
 
   def post(self):
     # Collect inputs.
-    readsetId = self.request.get("readsetId")
+    readsetId = self.request.get('readsetId')
     sequenceName = self.request.get('sequenceName')
     sequenceStart = int(self.request.get('sequenceStart'))
     sequenceEnd = int(self.request.get('sequenceEnd'))
@@ -70,15 +70,16 @@ class MainHandler(webapp2.RequestHandler):
     pipeline = PipelineGenerateCoverage(readsetId, sequenceName,
                                         sequenceStart, sequenceEnd)
     pipeline.start()
-    self.redirect(pipeline.base_path + "/status?root=" + pipeline.pipeline_id)
+    self.redirect('%s/status?root=%s' %
+                  (pipeline.base_path, pipeline.pipeline_id))
 
   def _get_version(self):
-    version = self.request.environ["CURRENT_VERSION_ID"].split('.')
+    version = self.request.environ['CURRENT_VERSION_ID'].split('.')
     name = version[0]
     date = datetime.datetime.fromtimestamp(long(version[1]) >> 28)
     if os.environ['SERVER_SOFTWARE'].startswith('Development'):
       date = datetime.datetime.now()
-    return name + " as of " + date.strftime("%Y-%m-%d %X")
+    return name + ' as of ' + date.strftime('%Y-%m-%d %X')
 
 app = webapp2.WSGIApplication(
   [

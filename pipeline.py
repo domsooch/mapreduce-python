@@ -60,14 +60,9 @@ def consolidate_output_reduce(key, values):
 
 
 class PipelineGenerateCoverage(base_handler.PipelineBase):
-  """A pipeline to generate coverage data
-
-  Args:
-    readsetId: the Id of the readset
-  """
+  """A pipeline to generate coverage data"""
 
   def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd):
-    #logging.debug("Running Pipeline for readsetId: %s", readsetId)
     bucket = get_bucket_name()
     shards = os.environ['MAPREDUCE_SHARDS']
 
@@ -108,8 +103,6 @@ class PipelineReturnIndividualResults(base_handler.PipelineBase):
   """
 
   def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd, files):
-    #logging.debug('Number of output files: %d', len(output))
-
     # If you have a setting to copy it over, do so
     local = os.environ['SERVER_SOFTWARE'].startswith('Development')
     bucket = get_bucket_name()
@@ -143,8 +136,6 @@ class PipelineConsolidateOutput(base_handler.PipelineBase):
   def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd,
           raw_coverage_data):
     bucket = get_bucket_name()
-    #logging.debug("Got %d raw coverage data output files to consolidate.",
-    #              len(raw_coverage_data))
 
     # Remove bucket from filenames. (Would be nice if you didn't have to do
     # this.
@@ -187,7 +178,6 @@ class PipelineReturnConsolidatedResults(base_handler.PipelineBase):
   """
 
   def run(self, readsetId, sequenceName, sequenceStart, sequenceEnd, output):
-    #logging.debug('Number of output files: %d', len(output))
     file = output[0]
 
     # If you have a setting to copy it over, do so

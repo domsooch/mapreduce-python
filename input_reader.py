@@ -76,16 +76,11 @@ class GenomicsAPIInputReader(input_readers.InputReader):
   def split_input(cls, mapper_spec):
     """Returns a list of input readers.
 
-    An equal number of input files are assigned to each shard (+/- 1). If there
-    are fewer files than shards, fewer than the requested number of shards will
-    be used. Input files are currently never split (although for some formats
-    could be and may be split in a future implementation).
-
     Args:
       mapper_spec: an instance of model.MapperSpec.
 
     Returns:
-      A list of InputReaders. None when no input data can be found.
+      A list of InputReaders.
     """
     reader_spec = input_readers._get_params(mapper_spec, allow_old=False)
     readsetId = reader_spec[cls.READSET_ID_PARAM]
