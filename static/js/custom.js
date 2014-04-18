@@ -53,7 +53,7 @@ $(function() {
             sequenceStart: {
                 required: "Please provide a Sequence Start."
             },
-            sequenceStart: {
+            sequenceEnd: {
                 required: "Please provide a Sequence End."
             }
          },
