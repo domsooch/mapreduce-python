@@ -1,8 +1,6 @@
 mapreduce-python
 ================
 
-This sample is a work in progress.
-
 Getting started
 ---------------
 
@@ -56,7 +54,47 @@ present already.
 For easy development, make sure your API key and the privatekey.12 file come
 from the same project. Mismatches will cause exceptions.
 
+
 Code layout
 -----------
 
-Under active development - coming soon!
+cloudstorage, httplib2, mapreduce, oauth2client:
+  these are all external libraries this sample depends on
+
+genomicsapi.py:
+  handles queries to the Genomics API. Includes helper methods to process
+  API data. (like ``compute_coverage``)
+
+input_reader.py:
+  implements the App Engine MapReduce input reader class. Determines the shard
+  split for a given query and uses ``genomicsapi`` to retrieve data for the
+  pipeline.
+
+pipeline.py:
+  includes several MapReduce pipeline configurations. The one used by ``main.py``,
+  ``PipelineGenerateCoverage``, computes Read coverage for a genomic region and
+  the output ends up in GoogleCloudStorage (as many files).
+
+main.py:
+  provides a web interface (using templates/index.html) for starting up the
+  MapReduce pipeline.
+
+
+Project status
+--------------
+
+Goals
+~~~~~
+* Provide a real world MapReduce example that uses the Genomics API (in python).
+* Prove that a MapReduce is both feasible and a good idea for Genomics data.
+  The resulting analysis should be useful.
+
+Current status
+~~~~~~~~~~~~~~
+This code is nearing the end of active development. It is still receiving
+performance improvements and other small tweaks.
+
+It also might be more useful to switch the MapReduce to implement some sort of
+Variant analysis rather than outputting Read coverage data. The former should
+provide a better example of Reducing (which is fairly useless in coverage), and
+should have a smaller final result (which makes it easier to consume).
