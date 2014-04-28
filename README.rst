@@ -58,7 +58,7 @@ from the same project. Mismatches will cause exceptions.
 Code layout
 -----------
 
-cloudstorage, httplib2, mapreduce, oauth2client:
+cloudstorage, `httplib2`_, `mapreduce`_, `oauth2client`_:
   these are all external libraries this sample depends on
 
 genomicsapi.py:
@@ -79,6 +79,9 @@ main.py:
   provides a web interface (using templates/index.html) for starting up the
   MapReduce pipeline.
 
+.. _oauth2client: https://code.google.com/p/google-api-python-client/wiki/OAuth2Client
+.. _httplib2: https://github.com/jcgregorio/httplib2
+.. _mapreduce: https://developers.google.com/appengine/docs/python/dataprocessing/mapreduce_library
 
 Project status
 --------------
