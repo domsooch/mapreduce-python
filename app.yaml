@@ -17,6 +17,8 @@ version: genomics-mapreduce-python-demo
 runtime: python27
 api_version: 1
 threadsafe: no
+# For large map reduces you may want to bump your instances up to at least F2.
+#instance_class: F2
 
 handlers:
 # Load the favicon from the usual place.
@@ -77,8 +79,8 @@ env_variables:
   #OUTPUT_DIRECTORY: 'genomics'
 
   # Required: The number of shards to use in the map reduce. Currently for large
-  # map reduce processes the suggested value is 200
-  MAPREDUCE_SHARDS: 200
+  # map reduce processes the suggested value is 256.
+  MAPREDUCE_SHARDS: 256.
 
 libraries:
 - name: webapp2
