@@ -162,6 +162,7 @@ class _PropertyRangeModelIterator(RangeIterator):
                                        produce_cursors=True)
         for model_instance in self._query:
           yield model_instance
+      self._query = None
       self._cursor = None
       if ns != self._ns_range.namespace_end:
         self._ns_range = self._ns_range.with_start_after(ns)
@@ -175,7 +176,7 @@ class _PropertyRangeModelIterator(RangeIterator):
       else:
         cursor = self._query.cursor_after()
 
-    if isinstance(cursor, basestring):
+    if cursor is None or isinstance(cursor, basestring):
       cursor_object = False
     else:
       cursor_object = True
@@ -270,6 +271,7 @@ class _KeyRangesIterator(RangeIterator):
     current_iter = None
     if json["current_iter"]:
       current_iter = key_range_iter_cls.from_json(json["current_iter"])
+    # pylint: disable=protected-access
     obj._current_iter = current_iter
     return obj
 
@@ -385,7 +387,7 @@ class KeyRangeEntityIterator(AbstractKeyRangeIterator):
         self._query_spec.entity_kind, filters=self._query_spec.filters)
     for entity in self._query.Run(config=datastore_query.QueryOptions(
         batch_size=self._query_spec.batch_size,
-        keys_only=self._KEYS_ONLY,
+        keys_only=self._query_spec.keys_only or self._KEYS_ONLY,
         start_cursor=self._cursor)):
       yield entity
 
