@@ -80,7 +80,7 @@ env_variables:
 
   # Required: The number of shards to use in the map reduce. Currently for large
   # map reduce processes the suggested value is 256.
-  MAPREDUCE_SHARDS: 256.
+  MAPREDUCE_SHARDS: 256
 
 libraries:
 - name: webapp2
